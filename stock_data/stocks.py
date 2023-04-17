@@ -1,15 +1,24 @@
-from typing import Tuple, List
-from datetime import date
+import math
+from typing import List
 from enum import Enum
 
-import requests
-import yfinance as yf
 import pandas as pd
-
-import plotly.express as px
+import requests
+import yfinance
 
 TICKER_LIST_URL = "https://www.cboe.com/us/equities/market_statistics/listed_symbols/csv"
-TICKERS = []
+TARGET_INDEX = "Close"
+
+
+class StockInfoKey(Enum):
+    ASK_SIZE = "askSize"
+    BID_SIZE = "bidSize"
+    ASK_PRICE = "ask"
+    BID_PRICE = "bid"
+    CURRENCY = "currency"
+    TRADEABLE = "tradeable"
+    SHORT_NAME = "shortName"
+    LONG_NAME = "longName"
 
 
 class Period(Enum):
@@ -24,72 +33,129 @@ class Period(Enum):
     TEN_YEARS = "10y"
 
 
-class StockInformation:
-
-    def __init__(self, day: date, price: float):
-        self.day = day
-        self.price = price
-
-    def __str__(self):
-        return f"Date: {self.day} | Price: {self.price}"
-
-
-def initialise():
+def download_stock_names():
+    stock_names = []
     response = requests.get(TICKER_LIST_URL)
     if response.ok:
-        global TICKERS
-        TICKERS = []
         content = response.text.split("\n")[1:]
         for line in content:
-            TICKERS.append(line.split(",")[0])
-        update_stock_data()
+            stock_names.append(line.split(",")[0])
+        return stock_names
     else:
         raise ConnectionError("Cannot get ticker file")
 
 
-def update_stock_data():
-    global TICKERS
-    to_remove = []
-    for stock_name in TICKERS:
-        if not exists_stock_data(stock_name):
-            to_remove.append(stock_name)
-
-    for stock_name in to_remove:
-        TICKERS.remove(stock_name)
+def download_stock_data(stock_names: List[str], period: Period = Period.SIX_MONTHS):
+    return yfinance.download(stock_names, period=period.value)
 
 
-def get_stock_names() -> List[str]:
-    return TICKERS
+def get_date_period(start_date: pd.Timestamp, end_date: pd.Timestamp):
+    dates = []
+    current_date = start_date
+    while current_date != end_date:
+        dates.append(current_date)
+        current_date = get_next_day(current_date)
+    return dates
 
 
-def exists_stock_data(stock_name: str):
-    ticker = yf.Ticker(stock_name)
-    history, info = ticker.history(), ticker.info
-    print(history)
+def get_next_day(date: pd.Timestamp):
+    day = date.day
+    month = date.month
+    year = date.year
+    day += 1
+    if day > date.days_in_month:
+        day = 1
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+    return pd.Timestamp(second=date.second, minute=date.minute, hour=date.hour, day=day, month=month, year=year)
 
 
-def get_stock_data(stock_name: str, period: Period = Period.SIX_MONTHS) -> Tuple[pd.DataFrame, dict]:
-    if not exists_stock_data(stock_name):
-        raise ValueError(f"Stock data does not exist for stock '{stock_name}'")
-    ticker = yf.Ticker(stock_name)
-    return ticker.history(period=period), ticker.info
+def fill_data(data: pd.DataFrame):
+    data_frame = pd.DataFrame()
+    columns = data.columns.get_level_values(1)
+
+    start_date = pd.Timestamp(data.index.values[0])
+    end_date = pd.Timestamp(data.index.values[-1])
+
+    time_stamps = get_date_period(start_date, end_date)
+    data_frame.index = time_stamps
+
+    for stock_name in columns:
+        stock_data = []
+        relevant_data = data[(TARGET_INDEX, stock_name)]
+        last_value = math.nan
+        for time_stamp in time_stamps:
+            if time_stamp.to_numpy() in relevant_data.index.values:
+                last_value = relevant_data.loc[time_stamp]
+            stock_data.append(last_value)
+
+        # Add column
+        data_frame[stock_name] = stock_data
+    return data_frame
 
 
-def get_stock_values(stock_history: pd.DataFrame):
-    print(stock_history)
-    stock_data = []
-    for day, price in zip(stock_history.index, stock_history["Close"]):
-        date_stamp = str(day).split(" ")[0]
-        year, month, day = date_stamp.split("-")
-        stock_data.append(StockInformation(day=date(year=int(year), month=int(month), day=int(day)), price=price))
-
-    return stock_data
-
-
-def plot_stock_data(stock_history: pd.DataFrame):
-    fig = px.line(stock_history.iloc[::-1], y="Open")
-    fig.show()
+def create_stock_infos(stock_names: List[str]):
+    tickers = yfinance.Tickers(" ".join(stock_names))
+    stock_infos = {}
+    # Searching through a dict takes forever
+    for stock_name in stock_names:
+        info = tickers.tickers[stock_name].info
+        if info:
+            stock_infos[stock_name] = StockInfo(tickers.tickers[stock_name].info)
+    return stock_infos
 
 
-if __name__ == '__main__':
-    exists_stock_data("I DONT EXIST")
+def get_value(key: str, info: dict):
+    if key in info:
+        return info[key]
+    else:
+        return 0
+
+
+class StockInfo:
+    bid_price: int
+    bid_size: int
+    ask_price: int
+    ask_size: int
+    currency: str
+    tradeable: bool
+    short_name: str
+    long_name: str
+
+    def __init__(self, ticker_info: dict):
+        self.create_info(ticker_info)
+
+    def create_info(self, ticker_info: dict):
+        self.bid_price = get_value(StockInfoKey.BID_PRICE.value, ticker_info)
+        self.bid_size = get_value(StockInfoKey.BID_SIZE.value, ticker_info)
+        self.ask_price = get_value(StockInfoKey.ASK_PRICE.value, ticker_info)
+        self.ask_size = get_value(StockInfoKey.ASK_SIZE.value, ticker_info)
+        self.currency = get_value(StockInfoKey.CURRENCY.value, ticker_info)
+        self.tradeable = get_value(StockInfoKey.TRADEABLE.value, ticker_info)
+        self.short_name = get_value(StockInfoKey.SHORT_NAME.value, ticker_info)
+        self.long_name = get_value(StockInfoKey.LONG_NAME.value, ticker_info)
+
+
+class Stonks:
+
+    def __init__(self):
+        self.stock_names = download_stock_names()
+        self.stock_prices = download_stock_data(self.stock_names)
+        self.stock_info = create_stock_infos(self.stock_names)
+        self.price_data = fill_data(self.stock_prices)
+
+    def get_stock_prices(self, stock_name: str) -> List[float]:
+        if stock_name in self.stock_prices:
+            return self.stock_prices[stock_name]
+        raise KeyError(f"Stock with symbol {stock_name} does not exist")
+
+    def get_stock_info(self, stock_name: str) -> StockInfo:
+        if stock_name in self.stock_info:
+            return self.stock_info[stock_name]
+        else:
+            raise KeyError(f"Stock information for symbol {stock_name} does not exist")
+
+    def get_stock_names(self) -> List[str]:
+        return self.stock_names

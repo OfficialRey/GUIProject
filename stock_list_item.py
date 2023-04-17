@@ -1,7 +1,8 @@
 from PyQt5 import QtWidgets
 
+
 class StockListWidgetItem(QtWidgets.QWidget):
-    def __init__(self, stock_name, stock_price, parent=None):
+    def __init__(self, stock_name, stock_price, currency, parent=None):
         super(StockListWidgetItem, self).__init__(parent)
 
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -9,7 +10,7 @@ class StockListWidgetItem(QtWidgets.QWidget):
 
         self.stock_name_label = QtWidgets.QLabel(stock_name)
         self.stock_name_label.setMinimumWidth(180)
-        self.stock_price_label = QtWidgets.QLabel(stock_price + "€")
+        self.stock_price_label = QtWidgets.QLabel(f"{'{:10.4f}'.format(stock_price)} {currency}")
         self.stock_price_label.setMinimumWidth(50)
 
         self.layout.addWidget(self.stock_name_label)
