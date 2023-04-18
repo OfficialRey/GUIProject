@@ -60,6 +60,9 @@ class MainWindow(QtWidgets.QMainWindow):
             info_widget.clicked.connect(self.show_stock_info)
             stock_table.insertRow(stock_table.rowCount())
 
+            vertical_header = stock_table.verticalHeader()
+            vertical_header.setDefaultSectionSize(120)
+
             stock_table.setCellWidget(i, 0, info_widget)
             stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_names[i]}"))
             stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.long_name}"))
