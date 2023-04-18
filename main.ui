@@ -607,7 +607,7 @@
             </attribute>
             <column>
              <property name="text">
-              <string>Stock</string>
+              <string>Stock Name</string>
              </property>
             </column>
             <column>

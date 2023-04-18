@@ -9,6 +9,15 @@ import yfinance
 TICKER_LIST_URL = "https://www.cboe.com/us/equities/market_statistics/listed_symbols/csv"
 TARGET_INDEX = "Close"
 
+MONTHS_IN_YEAR = 12
+
+
+class TimeInterval(Enum):
+    DAY = 1
+    WEEK = 7
+    MONTH = 30
+    YEAR = 365
+
 
 class StockInfoKey(Enum):
     ASK_SIZE = "askSize"
@@ -23,7 +32,7 @@ class StockInfoKey(Enum):
 
 class Period(Enum):
     ONE_DAY = "1d"
-    FIVE_DAYS = "5d"
+    ONE_WEEK = "7d"
     ONE_MONTH = "1mo"
     THREE_MONTHS = "3mo"
     SIX_MONTHS = "6mo"
@@ -56,6 +65,29 @@ def get_date_period(start_date: pd.Timestamp, end_date: pd.Timestamp):
         dates.append(current_date)
         current_date = get_next_day(current_date)
     return dates
+
+
+def add_time_stamp(date: pd.Timestamp, day: int = 0, month: int = 0, year: int = 0):
+    # Approximation of target date
+    # Not perfect but close enough to fulfill the use case
+    current_day = date.day
+    current_month = date.month
+    current_year = date.year
+
+    current_day += day
+    while current_day > date.days_in_month:
+        current_day -= date.days_in_month
+        current_month += 1
+
+    current_month += month
+    while current_month > MONTHS_IN_YEAR:
+        current_month -= MONTHS_IN_YEAR
+        current_year += 1
+
+    current_year += year
+
+    return pd.Timestamp(second=date.second, minute=date.minute, hour=date.hour, day=current_day, month=current_month,
+                        year=current_year)
 
 
 def get_next_day(date: pd.Timestamp):
@@ -96,14 +128,48 @@ def fill_data(data: pd.DataFrame):
     return data_frame
 
 
+def calculate_stock_trend(stock_prices: List[float], period: Period = Period.ONE_MONTH):
+    current_price = stock_prices[-1]
+    old_price = stock_prices[0]
+    days_to_remove = 0
+    if period == Period.ONE_DAY:
+        days_to_remove = TimeInterval.DAY.value
+    elif period == Period.ONE_WEEK:
+        days_to_remove = TimeInterval.WEEK.value
+    elif period == Period.ONE_MONTH:
+        days_to_remove = TimeInterval.MONTH.value
+    elif period == Period.THREE_MONTHS:
+        days_to_remove = TimeInterval.MONTH.value * 3
+    elif period == Period.SIX_MONTHS:
+        days_to_remove = TimeInterval.MONTH.value * 6
+    elif period == Period.ONE_YEAR:
+        days_to_remove = TimeInterval.YEAR.value
+    elif period == Period.TWO_YEARS:
+        days_to_remove = TimeInterval.YEAR.value * 2
+    elif period == Period.FIVE_YEARS:
+        days_to_remove = TimeInterval.YEAR.value * 5
+    elif period == Period.TEN_YEARS:
+        days_to_remove = TimeInterval.YEAR.value * 10
+
+    if len(stock_prices) > days_to_remove:
+        old_price = stock_prices[-days_to_remove]
+    # TODO: Fix formula
+    trend = ((current_price / old_price) - 1) * 100
+    print(trend)
+    print(current_price)
+    print(old_price)
+    return trend
+
+
 def create_stock_infos(stock_names: List[str]):
     tickers = yfinance.Tickers(" ".join(stock_names))
     stock_infos = {}
+    # TODO: Improve performance
     # Searching through a dict takes forever
     for stock_name in stock_names:
         info = tickers.tickers[stock_name].info
         if info:
-            stock_infos[stock_name] = StockInfo(tickers.tickers[stock_name].info)
+            stock_infos[stock_name] = StockInfo(info)
     return stock_infos
 
 
@@ -140,22 +206,32 @@ class StockInfo:
 
 class Stonks:
 
-    def __init__(self):
-        self.stock_names = download_stock_names()
+    def __init__(self, stock_names=None):
+        if stock_names is None:
+            self.stock_names = download_stock_names()
+        else:
+            self.stock_names = download_stock_names()
+
         self.stock_prices = download_stock_data(self.stock_names)
-        self.stock_info = create_stock_infos(self.stock_names)
+        self.stock_info = {}
         self.price_data = fill_data(self.stock_prices)
 
     def get_stock_prices(self, stock_name: str) -> List[float]:
-        if stock_name in self.stock_prices:
-            return self.stock_prices[stock_name]
+        if stock_name in self.price_data.columns:
+            return self.price_data[stock_name]
         raise KeyError(f"Stock with symbol {stock_name} does not exist")
 
+    def get_stock_trend(self, stock_name: str) -> float:
+        if stock_name in self.price_data.columns:
+            return calculate_stock_trend(self.get_stock_prices(stock_name))
+
     def get_stock_info(self, stock_name: str) -> StockInfo:
-        if stock_name in self.stock_info:
+        if stock_name in self.stock_info.keys():
             return self.stock_info[stock_name]
         else:
-            raise KeyError(f"Stock information for symbol {stock_name} does not exist")
+            info = StockInfo(yfinance.Ticker(stock_name).info)
+            self.stock_info[stock_name] = info
+            return info
 
     def get_stock_names(self) -> List[str]:
         return self.stock_names

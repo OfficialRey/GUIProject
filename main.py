@@ -1,10 +1,10 @@
 import sys
 import json
-from PyQt5 import uic, QtWidgets
-import stock_list_item
 from stock_data.stocks import Stonks
-from PyQt5 import uic, QtWidgets, QtGui, QtCore
+from PyQt5 import uic, QtWidgets, QtGui
 import hashlib
+
+from stock_data.stock_page import StockPage
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -15,9 +15,10 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi("main.ui", self)
 
         self.stocks = Stonks()
+        self.page = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
         with open("style.css") as f:
-             self.setStyleSheet(f.read().strip())
+            self.setStyleSheet(f.read().strip())
 
         with open("users.json") as f:
             self.user_list = json.load(f)
@@ -29,13 +30,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def add_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
-        stock_names = self.stocks.get_stock_names()
+        stock_names = self.page.get_page()
         for i in range(len(stock_names)):
             stock_info = self.stocks.get_stock_info(stock_names[i])
+            stock_trend = self.stocks.get_stock_trend(stock_names[i])
+            sign = "+" if stock_trend > 0 else ""
             stock_table.insertRow(stock_table.rowCount())
             stock_table.setCellWidget(i, 0, QtWidgets.QLabel(f"{stock_info.long_name} ({stock_names[i]})"))
             stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
-            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"(+0.00%)"))
+            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"({sign}{'{:.2f}%'.format(stock_trend)})"))
             stock_table.setCellWidget(i, 3, QtWidgets.QLabel("[graph]"))
 
     def add_functions(self):
@@ -48,9 +51,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
         self.findChild(QtWidgets.QCheckBox, "positiveTrendsCheck").stateChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QCheckBox, "negativeTrendsCheck").stateChanged.connect(self.on_search_changed)
-    
+
     def on_exit(self):
-         self.close()
+        self.close()
 
     def change_password(self):
         current_pwd = self.findChild(QtWidgets.QLineEdit, "currentPassword")
@@ -117,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tabWidget.setTabEnabled(0, state)
         tabWidget.setStyleSheet(tabWidget.styleSheet())
-    
+
     def set_user_tab_state(self, state):
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tabWidget.setTabEnabled(1, state)
@@ -132,30 +135,30 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
 
         if value_lower > value_upper:
-             slider = self.findChild(QtWidgets.QSlider, "stockPriceFilter2")
-             slider.setValue(value_lower + 1)
-             value_upper += 1
+            slider = self.findChild(QtWidgets.QSlider, "stockPriceFilter2")
+            slider.setValue(value_lower + 1)
+            value_upper += 1
         if value_upper < value_lower:
-             slider = self.findChild(QtWidgets.QSlider, "stockPriceFilter")
-             slider.setValue(value_upper - 1)
-             value_lower -= 1
+            slider = self.findChild(QtWidgets.QSlider, "stockPriceFilter")
+            slider.setValue(value_upper - 1)
+            value_lower -= 1
 
         for i in range(stock_table.rowCount()):
             stock_name = stock_table.cellWidget(i, 0).text()
             stock_price = float(stock_table.cellWidget(i, 1).text())
             stock_trend = float(stock_table.cellWidget(i, 2).text()[:-1])
             if search.lower() not in stock_name.lower() or \
-                value_lower > stock_price or value_upper < stock_price or \
-                (stock_trend >= 0 and not positive_check) or \
-                (stock_trend <= 0 and not negative_check):
-                    stock_table.hideRow(i)
+                    value_lower > stock_price or value_upper < stock_price or \
+                    (stock_trend >= 0 and not positive_check) or \
+                    (stock_trend <= 0 and not negative_check):
+                stock_table.hideRow(i)
             else:
                 stock_table.showRow(i)
-    
+
     def set_icons(self):
-         self.setWindowIcon(QtGui.QIcon("logo.png"))
-         self.findChild(QtWidgets.QPushButton, "logoutButton").setIcon(QtGui.QIcon("logout.png"))
-    
+        self.setWindowIcon(QtGui.QIcon("logo.png"))
+        self.findChild(QtWidgets.QPushButton, "logoutButton").setIcon(QtGui.QIcon("logout.png"))
+
     def save_user_data(self):
         with open("users.json", "w") as f:
             json.dump(self.user_list, f)
