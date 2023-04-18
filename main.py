@@ -145,8 +145,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for i in range(stock_table.rowCount()):
             stock_name = stock_table.cellWidget(i, 0).text()
-            stock_price = float(stock_table.cellWidget(i, 1).text())
-            stock_trend = float(stock_table.cellWidget(i, 2).text()[:-1])
+            try:
+                stock_price = float(stock_table.cellWidget(i, 1).text()[:-4])
+            except ValueError:
+                stock_price = 0.0
+            stock_trend = float(stock_table.cellWidget(i, 2).text()[1:-2])
             if search.lower() not in stock_name.lower() or \
                     value_lower > stock_price or value_upper < stock_price or \
                     (stock_trend >= 0 and not positive_check) or \
