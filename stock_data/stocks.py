@@ -1,15 +1,18 @@
 import math
+import time
 from typing import List
 from enum import Enum
 
 import pandas as pd
 import requests
 import yfinance
+from requests import HTTPError
 
 TICKER_LIST_URL = "https://www.cboe.com/us/equities/market_statistics/listed_symbols/csv"
 TARGET_INDEX = "Close"
 
 MONTHS_IN_YEAR = 12
+PRICE = "Price"
 
 
 class TimeInterval(Enum):
@@ -104,9 +107,8 @@ def get_next_day(date: pd.Timestamp):
     return pd.Timestamp(second=date.second, minute=date.minute, hour=date.hour, day=day, month=month, year=year)
 
 
-def fill_data(data: pd.DataFrame):
+def fill_data(data: pd.DataFrame, stock_name: str):
     data_frame = pd.DataFrame()
-    columns = data.columns.get_level_values(1)
 
     start_date = pd.Timestamp(data.index.values[0])
     end_date = pd.Timestamp(data.index.values[-1])
@@ -114,21 +116,20 @@ def fill_data(data: pd.DataFrame):
     time_stamps = get_date_period(start_date, end_date)
     data_frame.index = time_stamps
 
-    for stock_name in columns:
-        stock_data = []
-        relevant_data = data[(TARGET_INDEX, stock_name)]
-        last_value = math.nan
-        for time_stamp in time_stamps:
-            if time_stamp.to_numpy() in relevant_data.index.values:
-                last_value = relevant_data.loc[time_stamp]
-            stock_data.append(last_value)
+    stock_data = []
+    relevant_data = data[(TARGET_INDEX, stock_name)]
+    last_value = math.nan
+    for time_stamp in time_stamps:
+        if time_stamp.to_numpy() in relevant_data.index.values:
+            last_value = relevant_data.loc[time_stamp]
+        stock_data.append(last_value)
 
-        # Add column
-        data_frame[stock_name] = stock_data
+    # Add column
+    data_frame[PRICE] = stock_data
     return data_frame
 
 
-def calculate_stock_trend(stock_prices: List[float], period: Period = Period.ONE_MONTH):
+def calculate_stock_trend(stock_prices: List[float], period: Period = Period.ONE_MONTH) -> float:
     current_price = stock_prices[-1]
     old_price = stock_prices[0]
     days_to_remove = 0
@@ -153,19 +154,13 @@ def calculate_stock_trend(stock_prices: List[float], period: Period = Period.ONE
 
     if len(stock_prices) > days_to_remove:
         old_price = stock_prices[-days_to_remove]
-    # TODO: Fix formula
     trend = ((current_price / old_price) - 1) * 100
-    print(trend)
-    print(current_price)
-    print(old_price)
     return trend
 
 
 def create_stock_infos(stock_names: List[str]):
     tickers = yfinance.Tickers(" ".join(stock_names))
     stock_infos = {}
-    # TODO: Improve performance
-    # Searching through a dict takes forever
     for stock_name in stock_names:
         info = tickers.tickers[stock_name].info
         if info:
@@ -207,31 +202,30 @@ class StockInfo:
 class Stonks:
 
     def __init__(self, stock_names=None):
-        if stock_names is None:
-            self.stock_names = download_stock_names()
-        else:
-            self.stock_names = download_stock_names()
-
+        self.stock_names = download_stock_names() if stock_names is None else stock_names
         self.stock_prices = download_stock_data(self.stock_names)
         self.stock_info = {}
-        self.price_data = fill_data(self.stock_prices)
+        self.price_data: dict = {}
 
     def get_stock_prices(self, stock_name: str) -> List[float]:
-        if stock_name in self.price_data.columns:
-            return self.price_data[stock_name]
-        raise KeyError(f"Stock with symbol {stock_name} does not exist")
+        if stock_name not in self.price_data:
+            self.price_data[stock_name] = fill_data(self.stock_prices, stock_name)
+        return self.price_data[stock_name][PRICE].values
 
     def get_stock_trend(self, stock_name: str) -> float:
-        if stock_name in self.price_data.columns:
-            return calculate_stock_trend(self.get_stock_prices(stock_name))
+        return calculate_stock_trend(self.get_stock_prices(stock_name))
 
     def get_stock_info(self, stock_name: str) -> StockInfo:
-        if stock_name in self.stock_info.keys():
-            return self.stock_info[stock_name]
-        else:
-            info = StockInfo(yfinance.Ticker(stock_name).info)
-            self.stock_info[stock_name] = info
-            return info
+        if stock_name not in self.stock_info.keys():
+            done = False
+            while not done:
+                try:
+                    info = StockInfo(yfinance.Ticker(stock_name).info)
+                    self.stock_info[stock_name] = info
+                    done = True
+                except HTTPError:
+                    time.sleep(0.5)
+        return self.stock_info[stock_name]
 
     def get_stock_names(self) -> List[str]:
         return self.stock_names

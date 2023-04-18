@@ -17,10 +17,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stocks = Stonks()
         self.page = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
-        stock_name_selection = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
-        for stock_name in self.stocks.get_stock_names():
-            stock_info = self.stocks.get_stock_info(stock_name)
-            stock_name_selection.addItem(f"{stock_info.long_name} ({stock_name})")
+        # stock_name_selection = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
+        # for stock_name in self.stocks.get_stock_names():
+        #    stock_info = self.stocks.get_stock_info(stock_name)
+        #    stock_name_selection.addItem(f"{stock_info.long_name} ({stock_name})")
 
         with open("style.css") as f:
             self.setStyleSheet(f.read().strip())
@@ -45,10 +45,11 @@ class MainWindow(QtWidgets.QMainWindow):
             info_widget.setIcon(icon)
             info_widget.clicked.connect(self.show_stock_info)
             stock_table.insertRow(stock_table.rowCount())
+
             stock_table.setCellWidget(i, 0, info_widget)
             stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_info.long_name} ({stock_names[i]})"))
             stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
-            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"({sign}{'{:.2f}%'.format(stock_trend)})"))
+            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
             stock_table.setCellWidget(i, 4, QtWidgets.QLabel("[graph]"))
 
     def show_stock_info(self):
