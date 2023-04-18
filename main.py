@@ -1,7 +1,9 @@
 import sys
 import json
+
+from graph.stock_graph import StockGraph
 from stock_data.stocks import Stonks
-from PyQt5 import uic, QtWidgets, QtGui, QtCore
+from PyQt5 import uic, QtWidgets, QtGui
 import hashlib
 
 from stock_data.stock_page import StockPage
@@ -49,6 +51,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(len(stock_names)):
             stock_info = self.stocks.get_stock_info(stock_names[i])
             stock_trend = self.stocks.get_stock_trend(stock_names[i])
+            stock_graph = StockGraph(self.stocks.get_stock_dates(stock_names[i]),
+                                     self.stocks.get_stock_prices(stock_names[i]))
             sign = "+" if stock_trend > 0 else ""
             icon = QtGui.QIcon("info_logo.png")
             info_widget = QtWidgets.QPushButton()
@@ -61,7 +65,7 @@ class MainWindow(QtWidgets.QMainWindow):
             stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.long_name}"))
             stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
             stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
-            stock_table.setCellWidget(i, 5, QtWidgets.QLabel("[graph]"))
+            stock_table.setCellWidget(i, 5, stock_graph.get_widget())
 
     def show_stock_info(self):
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")

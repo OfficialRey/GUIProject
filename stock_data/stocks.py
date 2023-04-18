@@ -207,9 +207,12 @@ class Stonks:
         self.stock_info = {}
         self.price_data: dict = {}
 
-    def get_stock_prices(self, stock_name: str) -> List[float]:
+    def create_stock_data(self, stock_name: str):
         if stock_name not in self.price_data:
             self.price_data[stock_name] = fill_data(self.stock_prices, stock_name)
+
+    def get_stock_prices(self, stock_name: str) -> List[float]:
+        self.create_stock_data(stock_name)
         return self.price_data[stock_name][PRICE].values
 
     def get_stock_trend(self, stock_name: str) -> float:
@@ -229,3 +232,7 @@ class Stonks:
 
     def get_stock_names(self) -> List[str]:
         return self.stock_names
+
+    def get_stock_dates(self, stock_name: str) -> List[pd.Timestamp]:
+        self.create_stock_data(stock_name)
+        return self.price_data[stock_name].index.values
