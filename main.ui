@@ -115,7 +115,7 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -597,7 +597,7 @@
              <bool>true</bool>
             </property>
             <property name="columnCount">
-             <number>4</number>
+             <number>5</number>
             </property>
             <attribute name="horizontalHeaderCascadingSectionResizes">
              <bool>true</bool>
@@ -605,6 +605,11 @@
             <attribute name="horizontalHeaderStretchLastSection">
              <bool>true</bool>
             </attribute>
+            <column>
+             <property name="text">
+              <string/>
+             </property>
+            </column>
             <column>
              <property name="text">
               <string>Stock Name</string>
@@ -626,6 +631,70 @@
              </property>
             </column>
            </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stockDetailsTab">
+       <attribute name="title">
+        <string>Stock Details</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="stockDetailsMainLayout" stretch="2,10">
+          <item>
+           <layout class="QHBoxLayout" name="stockInfoLayout">
+            <item>
+             <widget class="QComboBox" name="stockNameSelection"/>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="furtherStockInfoLayout">
+              <item>
+               <widget class="QLabel" name="stockPrice">
+                <property name="text">
+                 <string>[Price]</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="stockPriceDiff">
+                <property name="text">
+                 <string>[Diff]</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="furtherStockInfoLayout2">
+              <item>
+               <widget class="QLabel" name="stockCategory">
+                <property name="text">
+                 <string>[Category]</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="stockMarketCap">
+                <property name="text">
+                 <string>[Market Cap]</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="stockVolume">
+                <property name="text">
+                 <string>[Volume]</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QWidget" name="historyGraphContainer" native="true"/>
           </item>
          </layout>
         </item>

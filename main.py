@@ -1,7 +1,7 @@
 import sys
 import json
 from stock_data.stocks import Stonks
-from PyQt5 import uic, QtWidgets, QtGui
+from PyQt5 import uic, QtWidgets, QtGui, QtCore
 import hashlib
 
 from stock_data.stock_page import StockPage
@@ -16,6 +16,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.stocks = Stonks()
         self.page = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
+
+        stock_name_selection = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
+        for stock_name in self.stocks.get_stock_names():
+            stock_info = self.stocks.get_stock_info(stock_name)
+            stock_name_selection.addItem(f"{stock_info.long_name} ({stock_name})")
 
         with open("style.css") as f:
             self.setStyleSheet(f.read().strip())
@@ -35,11 +40,29 @@ class MainWindow(QtWidgets.QMainWindow):
             stock_info = self.stocks.get_stock_info(stock_names[i])
             stock_trend = self.stocks.get_stock_trend(stock_names[i])
             sign = "+" if stock_trend > 0 else ""
+            icon = QtGui.QIcon("info_logo.png")
+            info_widget = QtWidgets.QPushButton()
+            info_widget.setIcon(icon)
+            info_widget.clicked.connect(self.show_stock_info)
             stock_table.insertRow(stock_table.rowCount())
-            stock_table.setCellWidget(i, 0, QtWidgets.QLabel(f"{stock_info.long_name} ({stock_names[i]})"))
-            stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
-            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"({sign}{'{:.2f}%'.format(stock_trend)})"))
-            stock_table.setCellWidget(i, 3, QtWidgets.QLabel("[graph]"))
+            stock_table.setCellWidget(i, 0, info_widget)
+            stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_info.long_name} ({stock_names[i]})"))
+            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
+            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"({sign}{'{:.2f}%'.format(stock_trend)})"))
+            stock_table.setCellWidget(i, 4, QtWidgets.QLabel("[graph]"))
+
+    def show_stock_info(self):
+        table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        row = table.currentRow()
+        tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
+        tab_widget.setCurrentIndex(3)
+        stock_selector = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
+        item_id = stock_selector.findText(table.cellWidget(row, 1).text())
+        if item_id != -1:
+            stock_selector.setCurrentIndex(item_id)
+        else:
+            print("cannot find stock in details selection")
+            print(table.cellWidget(row, 1).text())
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
