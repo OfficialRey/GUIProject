@@ -115,7 +115,7 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -597,7 +597,7 @@
              <bool>true</bool>
             </property>
             <property name="columnCount">
-             <number>5</number>
+             <number>6</number>
             </property>
             <attribute name="horizontalHeaderCascadingSectionResizes">
              <bool>true</bool>
@@ -608,6 +608,11 @@
             <column>
              <property name="text">
               <string/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Stock ID</string>
              </property>
             </column>
             <column>
@@ -646,7 +651,11 @@
           <item>
            <layout class="QHBoxLayout" name="stockInfoLayout">
             <item>
-             <widget class="QComboBox" name="stockNameSelection"/>
+             <widget class="QLabel" name="stockName">
+              <property name="text">
+               <string>[Name]</string>
+              </property>
+             </widget>
             </item>
             <item>
              <layout class="QVBoxLayout" name="furtherStockInfoLayout">

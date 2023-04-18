@@ -17,10 +17,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stocks = Stonks()
         self.page = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
-        # stock_name_selection = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
-        # for stock_name in self.stocks.get_stock_names():
-        #    stock_info = self.stocks.get_stock_info(stock_name)
-        #    stock_name_selection.addItem(f"{stock_info.long_name} ({stock_name})")
+        self.set_stock_details(self.stocks.get_stock_names()[0])
 
         with open("style.css") as f:
             self.setStyleSheet(f.read().strip())
@@ -32,6 +29,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.add_functions()
         self.add_stock_table()
         self.set_icons()
+
+    def set_stock_details(self, stock_id):
+        stock_name = self.findChild(QtWidgets.QLabel, "stockName")
+        stock_info = self.stocks.get_stock_info(stock_id)
+        stock_name.setText(f"{stock_info.long_name} ({stock_id})")
+        stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
+        stock_price.setText(f"{stock_info.ask_price} {stock_info.currency}")
+        stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
+        stock_trend = self.stocks.get_stock_trend(stock_id)
+        sign = "+" if stock_trend > 0 else ""
+        stock_price_diff.setText(f"({sign}{'{:4.2f}'.format(stock_trend)}%)")
+
+        # TODO: load further info like category and market capital and graph of last 6 months
 
     def add_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -47,23 +57,21 @@ class MainWindow(QtWidgets.QMainWindow):
             stock_table.insertRow(stock_table.rowCount())
 
             stock_table.setCellWidget(i, 0, info_widget)
-            stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_info.long_name} ({stock_names[i]})"))
-            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
-            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
-            stock_table.setCellWidget(i, 4, QtWidgets.QLabel("[graph]"))
+            stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_names[i]}"))
+            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.long_name}"))
+            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
+            stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
+            stock_table.setCellWidget(i, 5, QtWidgets.QLabel("[graph]"))
 
     def show_stock_info(self):
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         row = table.currentRow()
+
+        stock_id = table.cellWidget(row, 1).text()
+        self.set_stock_details(stock_id)
+
         tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tab_widget.setCurrentIndex(3)
-        stock_selector = self.findChild(QtWidgets.QComboBox, "stockNameSelection")
-        item_id = stock_selector.findText(table.cellWidget(row, 1).text())
-        if item_id != -1:
-            stock_selector.setCurrentIndex(item_id)
-        else:
-            print("cannot find stock in details selection")
-            print(table.cellWidget(row, 1).text())
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
@@ -156,7 +164,6 @@ class MainWindow(QtWidgets.QMainWindow):
         value_upper = self.findChild(QtWidgets.QSlider, "stockPriceFilter2").value()
         positive_check = self.findChild(QtWidgets.QCheckBox, "positiveTrendsCheck").isChecked()
         negative_check = self.findChild(QtWidgets.QCheckBox, "negativeTrendsCheck").isChecked()
-        stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
 
         if value_lower > value_upper:
             slider = self.findChild(QtWidgets.QSlider, "stockPriceFilter2")
@@ -167,20 +174,7 @@ class MainWindow(QtWidgets.QMainWindow):
             slider.setValue(value_upper - 1)
             value_lower -= 1
 
-        for i in range(stock_table.rowCount()):
-            stock_name = stock_table.cellWidget(i, 0).text()
-            try:
-                stock_price = float(stock_table.cellWidget(i, 1).text()[:-4])
-            except ValueError:
-                stock_price = 0.0
-            stock_trend = float(stock_table.cellWidget(i, 2).text()[1:-2])
-            if search.lower() not in stock_name.lower() or \
-                    value_lower > stock_price or value_upper < stock_price or \
-                    (stock_trend >= 0 and not positive_check) or \
-                    (stock_trend <= 0 and not negative_check):
-                stock_table.hideRow(i)
-            else:
-                stock_table.showRow(i)
+        # TODO: new search algorithm for stock data pages
 
     def set_icons(self):
         self.setWindowIcon(QtGui.QIcon("logo.png"))
