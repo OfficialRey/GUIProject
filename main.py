@@ -34,12 +34,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
-        stock_info = self.stocks.get_stock_info(stock_id)
-        stock_name.setText(f"{stock_info.long_name} ({stock_id})")
+        target_stock = self.stocks.get_stock(stock_id)
+        stock_name.setText(f"{target_stock.get_long_name()} ({stock_id})")
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
-        stock_price.setText(f"{stock_info.ask_price} {stock_info.currency}")
+        stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
-        stock_trend = self.stocks.get_stock_trend(stock_id)
+        stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"({sign}{'{:4.2f}'.format(stock_trend)}%)")
 
@@ -49,10 +49,9 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         stock_names = self.page.get_page()
         for i in range(len(stock_names)):
-            stock_info = self.stocks.get_stock_info(stock_names[i])
-            stock_trend = self.stocks.get_stock_trend(stock_names[i])
-            stock_graph = StockGraph(self.stocks.get_stock_dates(stock_names[i]),
-                                     self.stocks.get_stock_prices(stock_names[i]))
+            target_stock = self.stocks.get_stock(stock_names[i])
+            stock_trend = target_stock.get_stock_trend(7)
+            stock_graph = StockGraph(target_stock.get_time_stamps(), target_stock.get_prices())
             sign = "+" if stock_trend > 0 else ""
             icon = QtGui.QIcon("info_logo.png")
             info_widget = QtWidgets.QPushButton()
@@ -65,8 +64,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             stock_table.setCellWidget(i, 0, info_widget)
             stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_names[i]}"))
-            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock_info.long_name}"))
-            stock_table.setCellWidget(i, 3, QtWidgets.QLabel(f"{stock_info.ask_price} {stock_info.currency}"))
+            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{target_stock.get_long_name()}"))
+            stock_table.setCellWidget(i, 3,
+                                      QtWidgets.QLabel(f"{target_stock.get_ask_price()} {target_stock.get_currency()}"))
             stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
             stock_table.setCellWidget(i, 5, stock_graph.get_widget())
 
