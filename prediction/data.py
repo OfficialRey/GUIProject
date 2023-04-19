@@ -4,10 +4,10 @@ from typing import List
 def get_training_data(ticker_data: List[float], input_period: int, scale_values: bool = True):
     x = []
     y = []
-    maximum = max(ticker_data)
+    scaling_factor = max(ticker_data)
     if scale_values:
-        for i in range(len(ticker_data)):
-            ticker_data[i] /= maximum
+        ticker_data = [(element / scaling_factor) for element in
+                       ticker_data]  # Normalize values for more efficient and accurate training
 
     for i in range(len(ticker_data)):
         if i < input_period:
@@ -18,6 +18,4 @@ def get_training_data(ticker_data: List[float], input_period: int, scale_values:
         x.append(training_data)
         y.append(ticker_data[i])
 
-    print(y)
-
-    return x, y
+    return x, y, scaling_factor
