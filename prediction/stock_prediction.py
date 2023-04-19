@@ -24,10 +24,12 @@ class StockPrediction:
         # Avoiding ReLU to counter the "Dying ReLU" problem
         self.model = Sequential([
             Dense(self.period),
-            Dense(256, activation='tanh'),
-            Dense(256, activation=LeakyReLU()),
-            Dense(256, activation='tanh'),
-            Dense(1, activation=ReLU())
+            Dense(128, activation='tanh'),
+            Dense(64, activation='tanh'),
+            Dense(32, activation='tanh'),
+            Dense(16, activation='tanh'),
+            Dense(8, activation='tanh'),
+            Dense(1, activation='tanh')
         ])
 
         self.model.compile(
@@ -64,4 +66,4 @@ if __name__ == '__main__':
     stonks = Stonks()
     model = StockPrediction(stonks.get_stock(stonks.get_stock_names()[0]), days_input_period=28)
     predictions = model.predict_future_stock_prices()
-    print(model.predict_future_stock_prices())
+    print(model.predict_future_stock_prices(period=356))
