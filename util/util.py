@@ -10,6 +10,8 @@ MONTHS_IN_YEAR = 12
 TARGET_INDEX = "Close"
 PRICE = "Price"
 
+ILLEGAL_CHARACTERS = ".:!?#&()[]{}/\\$§\"\'+-*@=|´`<> "
+
 
 def download_stock_data(stock_names: List[str], period: str = "7d"):
     return yfinance.download(stock_names, period=period)
@@ -120,3 +122,18 @@ def get_value(key: str, info: dict):
         return info[key]
     else:
         return 0
+
+
+def post_process_results(results: List[float]):
+    # Overwrite negative entries with previous non-negative values
+    for i in range(1, len(results)):
+        if results[i] < 0:
+            results[i] = results[i - 1]
+    return results
+
+
+def sanitize_file_name(file_name: str):
+    for character in ILLEGAL_CHARACTERS:
+        file_name = file_name.replace(character, '')
+
+    return file_name

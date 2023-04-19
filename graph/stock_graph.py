@@ -1,5 +1,4 @@
 import pyqtgraph
-from PyQt5 import QtWidgets
 
 
 class StockGraph:

@@ -113,5 +113,11 @@ class Stonks:
             self.stocks[stock_name] = Stock(self.stock_data, stock_name)
         return self.stocks[stock_name]
 
+    def get_stocks(self, stock_names: List[str]):
+        stocks = []
+        for stock_name in stock_names:
+            stocks.append(self.get_stock(stock_name))
+        return stocks
+
     def get_stock_names(self) -> List[str]:
         return self.stock_names
