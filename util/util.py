@@ -32,7 +32,8 @@ def get_next_day(date: pd.Timestamp):
 
 
 def download_stock_names(url: str):
-    stock_names = []
+    return ["AFX.DE","AIXA.DE","AT1.DE","BC8.DE","BFSA.DE","BOSS.DE","CBK.DE","DHER.DE","DUE.DE","ECV.DE","EVD.DE","EVK.DE","EVT.DE","FNTN.DE","FPE3.DE","FRA.DE","G1A.DE","G24.DE","GXI.DE","HFG.DE","HLE.DE","JUN3.DE","KBX.DE","KGX.DE","LEG.DE","LHA.DE","LXS.DE","NDA.DE","NEM.DE","O2D.DE","PSM.DE","PUM.DE","QH9.DE","RAA.DE","RHM.DE","RRTL.DE","SAX.DE","SDF.DE","SIX2.DE","SOW.DE","STM.DE","TEG.DE","TKA.DE","TLX.DE","TMV.DE","UTDI.DE","VBK.DE","VTWR.DE","WAF.DE","WCH.DE"]
+    '''stock_names = []
     response = requests.get(url)
     if response.ok:
         content = response.text.split("\n")[1:]
@@ -40,7 +41,7 @@ def download_stock_names(url: str):
             stock_names.append(line.split(",")[0])
         return stock_names
     else:
-        raise ConnectionError("Cannot get ticker file")
+        raise ConnectionError("Cannot get ticker file")'''
 
 
 def get_date_period(start_date: pd.Timestamp, end_date: pd.Timestamp):
