@@ -21,7 +21,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_stock_details(self.stocks.get_stock_names()[0])
 
-        with open("style.css") as f:
+        with open("style.qss") as f:
             self.setStyleSheet(f.read().strip())
 
         with open("users.json") as f:
