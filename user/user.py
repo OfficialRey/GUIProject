@@ -1,6 +1,9 @@
 import json
 import hashlib
 
+from logs.log import log_message
+
+
 class User:
     def __init__(self):
         self.current_user = ""
@@ -37,9 +40,10 @@ class User:
         pwd_hash.update(password.encode("utf-8"))
         if pwd_hash.hexdigest() == self.user_list[username]["password"]:
             return True
+        log_message(f"Failed login attempt of user {username}")
         return False
 
-    def change_password(self, current_pwd, new_pwd):
+    def change_password(self, current_pwd, new_pwd) -> bool:
         current_pwd_hash = hashlib.sha256()
         current_pwd_hash.update(current_pwd.encode("utf-8"))
 
@@ -49,5 +53,6 @@ class User:
         if self.user_list[self.current_user]["password"] == current_pwd_hash.hexdigest():
             self.user_list[self.current_user]["password"] = new_pwd_hash.hexdigest()
             self.save_user_data()
+            log_message(f"Updated password of user {self.current_user}")
             return True
         return False

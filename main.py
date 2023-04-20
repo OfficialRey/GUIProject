@@ -1,12 +1,10 @@
 import sys
-import json
 
 from graph.stock_graph import StockGraph
-from logs.log import Logger
+from logs.log import log_message
 from stock_data.stocks import Stonks
-from util.user import User
+from user.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
-import hashlib
 from workers import StockTablePageWorker
 
 from stock_data.stock_page import StockPage
@@ -18,7 +16,6 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi("main.ui", self)
 
         self.stocks = Stonks()
-        self.logs = Logger()
         self.pages = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
         self.set_stock_details(self.stocks.get_stock_names()[0])
@@ -33,7 +30,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_stock_table()
         self.set_icons()
 
-        self.logs.log_message("Program launched.")
+        log_message("GUI launched")
 
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
@@ -223,6 +220,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
+    log_message("Program launched")
     app = QtWidgets.QApplication(sys.argv)
 
     window = MainWindow()
