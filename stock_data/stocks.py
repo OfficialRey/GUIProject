@@ -3,6 +3,7 @@ from enum import Enum
 
 import pandas as pd
 import yfinance
+from requests import HTTPError
 
 from util.util import get_value, download_stock_names, download_stock_data, fill_data, \
     calculate_stock_trend
@@ -57,15 +58,19 @@ class Stock:
         self.meta_data = self.create_meta_data()
 
     def create_meta_data(self):
-        ticker_info = yfinance.Ticker(self.stock_name).info
-        return {StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
-                StockInfoKey.BID_SIZE: get_value(StockInfoKey.BID_SIZE, ticker_info),
-                StockInfoKey.ASK_PRICE: get_value(StockInfoKey.ASK_PRICE, ticker_info),
-                StockInfoKey.ASK_SIZE: get_value(StockInfoKey.ASK_SIZE, ticker_info),
-                StockInfoKey.CURRENCY: get_value(StockInfoKey.CURRENCY, ticker_info),
-                StockInfoKey.TRADEABLE: get_value(StockInfoKey.TRADEABLE, ticker_info),
-                StockInfoKey.SHORT_NAME: get_value(StockInfoKey.SHORT_NAME, ticker_info),
-                StockInfoKey.LONG_NAME: get_value(StockInfoKey.LONG_NAME, ticker_info)}
+        while True:
+            try:
+                ticker_info = yfinance.Ticker(self.stock_name).info
+                return {StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
+                        StockInfoKey.BID_SIZE: get_value(StockInfoKey.BID_SIZE, ticker_info),
+                        StockInfoKey.ASK_PRICE: get_value(StockInfoKey.ASK_PRICE, ticker_info),
+                        StockInfoKey.ASK_SIZE: get_value(StockInfoKey.ASK_SIZE, ticker_info),
+                        StockInfoKey.CURRENCY: get_value(StockInfoKey.CURRENCY, ticker_info),
+                        StockInfoKey.TRADEABLE: get_value(StockInfoKey.TRADEABLE, ticker_info),
+                        StockInfoKey.SHORT_NAME: get_value(StockInfoKey.SHORT_NAME, ticker_info),
+                        StockInfoKey.LONG_NAME: get_value(StockInfoKey.LONG_NAME, ticker_info)}
+            except HTTPError:
+                pass
 
     def get_stock_trend(self, period: int):
         return calculate_stock_trend(self.prices, period)
