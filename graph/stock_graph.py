@@ -1,19 +1,34 @@
 from typing import List
 
+import numpy
 import pandas as pd
 import pyqtgraph
 
 from util.util import time_stamp_to_string
 
 
+def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
+    content = [time_stamp_to_string(time_stamps[0])]
+
+    for i in range(1, len(time_stamps) - 1):
+        stamp = pd.Timestamp(time_stamps[i])
+        if stamp.day == 1 or stamp.day == stamp.days_in_month // 2:
+            content.append(time_stamp_to_string(stamp))
+        else:
+            content.append("")
+
+    content.append(time_stamp_to_string(time_stamps[-1]))
+    content = dict(enumerate(content))
+    return content
+
+
 class StockGraph:
 
-    def __init__(self, x: List[pd.Timestamp], y: List[float]):
+    def __init__(self, x: List[numpy.datetime64], y: List[float]):
         self.graph = pyqtgraph.PlotWidget()
         self.graph.setBackground(background='white')
-        x_content = [time_stamp_to_string(pd.Timestamp(x[i])) for i in range(len(x))]
-        x_content = dict(enumerate(x_content))
         axis = self.graph.getAxis('bottom')
+        x_content = create_axis_ticks(x)
         axis.setTicks([x_content.items()])
         self.graph.plot(list(x_content.keys()), y)
 
