@@ -4,6 +4,7 @@ import json
 from graph.stock_graph import StockGraph
 from logs.log import Logger
 from stock_data.stocks import Stonks
+from util.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 import hashlib
 from workers import StockTablePageWorker
@@ -13,8 +14,6 @@ from stock_data.stock_page import StockPage
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        self.current_user = ""
-
         super(MainWindow, self).__init__()
         uic.loadUi("main.ui", self)
 
@@ -24,11 +23,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_stock_details(self.stocks.get_stock_names()[0])
 
+        self.user_manager = User()
+
         with open("style.qss") as f:
             self.setStyleSheet(f.read().strip())
-
-        with open("users.json") as f:
-            self.user_list = json.load(f)
 
         self.set_user_tab_state(False)
         self.add_functions()
@@ -134,51 +132,46 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def change_password(self):
         current_pwd = self.findChild(QtWidgets.QLineEdit, "currentPassword")
-        current_pwd_hash = hashlib.sha256()
-        current_pwd_hash.update(current_pwd.text().encode("utf-8"))
         new_pwd = self.findChild(QtWidgets.QLineEdit, "newPassword")
-        new_pwd_hash = hashlib.sha256()
-        new_pwd_hash.update(new_pwd.text().encode("utf-8"))
         confirm_pwd = self.findChild(QtWidgets.QLineEdit, "confirmPassword")
 
-        if self.user_list[self.current_user]["password"] == current_pwd_hash.hexdigest():
-            if new_pwd.text() == confirm_pwd.text():
-                self.user_list[self.current_user]["password"] = new_pwd_hash.hexdigest()
-                self.save_user_data()
-                # TODO: set normal border
+        if new_pwd.text() == confirm_pwd.text():
+            if self.user_manager.change_password(current_pwd.text(), new_pwd.text()):
                 current_pwd.setText("")
                 new_pwd.setText("")
                 confirm_pwd.setText("")
+                current_pwd.setStyleSheet("")
+                confirm_pwd.setStyleSheet("")
             else:
-                pass
-                # red border
+                self.mark_invalid_input(current_pwd)
         else:
-            pass
-            # red border
+            self.mark_invalid_input(confirm_pwd)
 
     def on_login_button(self):
-        username_input = self.findChild(QtWidgets.QLineEdit, "usernameLineEdit").text()
-        password_input = self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").text()
-        password_input_hash = hashlib.sha256()
-        password_input_hash.update(password_input.encode("utf-8"))
+        username_input = self.findChild(QtWidgets.QLineEdit, "usernameLineEdit")
+        password_input = self.findChild(QtWidgets.QLineEdit, "passwordLineEdit")
 
-        for username in self.user_list.keys():
-            if username == username_input:
-                if self.user_list[username]["password"] == password_input_hash.hexdigest():
-                    self.on_login(username)
-                else:
-                    self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setStyleSheet("border: 1px solid red; padding-top: 2px; \
-                                                                                          padding-bottom: 2px; border-radius: 2px;")
+        if self.user_manager.exists(username_input.text()):
+            if self.user_manager.check_password(password_input.text(), username_input.text()):
+                self.on_login(username_input.text())
+                password_input.setStyleSheet("")
+                username_input.setStyleSheet("")
+            else:
+                self.mark_invalid_input(password_input)
+        else:
+            self.mark_invalid_input(username_input)
+
+    def mark_invalid_input(self, widget: QtWidgets.QWidget):
+        widget.setStyleSheet("border: 1px solid red; padding-top: 2px; padding-bottom: 2px; border-radius: 2px;")
 
     def on_login(self, username):
-        balance = self.user_list[username]["balance"]
+        self.user_manager.set_user(username)
+        balance = self.user_manager.get_balance()
         self.findChild(QtWidgets.QLabel, "userInfoBalanceValue").setText("{:.2f}€".format(balance))
-        self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setStyleSheet("")
         self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("Hi, {}".format(username))
         self.set_login_tab_state(False)
         self.set_user_tab_state(True)
         self.findChild(QtWidgets.QTabWidget, "tabWidget").setCurrentIndex(1)
-        self.current_user = username
 
     def on_logout(self):
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
@@ -226,10 +219,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QPushButton, "logoutButton").setIcon(QtGui.QIcon("assets/logout.png"))
         self.findChild(QtWidgets.QPushButton, "stockTablePrevPage").setIcon(QtGui.QIcon("assets/left_arrow.png"))
         self.findChild(QtWidgets.QPushButton, "stockTableNextPage").setIcon(QtGui.QIcon("assets/right_arrow.png"))
-
-    def save_user_data(self):
-        with open("users.json", "w") as f:
-            json.dump(self.user_list, f)
 
 
 if __name__ == "__main__":
