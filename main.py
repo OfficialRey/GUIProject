@@ -1,11 +1,13 @@
 import sys
 
+from PyQt5.QtWidgets import QHBoxLayout
+
 from graph.stock_graph import StockGraph
 from logs.log import log_message
 from stock_data.stocks import Stonks
 from user.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
-from workers import StockTablePageWorker
+from worker.table import StockTablePageWorker
 
 from stock_data.stock_page import StockPage
 
@@ -13,9 +15,11 @@ from stock_data.stock_page import StockPage
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.worker = None
         uic.loadUi("main.ui", self)
 
         self.stocks = Stonks()
+        self.stocks.fetch()
         self.pages = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
         self.set_stock_details(self.stocks.get_stock_names()[0])
@@ -39,6 +43,18 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
         stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
+        stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
+
+        # Clear layout
+        layout = stock_graph.layout()
+        if layout is not None:
+            for i in reversed(range(layout.count())):
+                layout.itemAt(i).widget().setParent(None)
+        else:
+            layout = QHBoxLayout()
+            stock_graph.setLayout(layout)
+        graph = StockGraph(target_stock.get_time_stamps(365), target_stock.get_prices(365))
+        layout.addWidget(graph.get_widget())
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"({sign}{'{:4.2f}'.format(stock_trend)}%)")
@@ -52,6 +68,8 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_table.setRowCount(0)
         stock_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         stock_names = self.pages.get_page()
+        page_labels = [str(1 + element + (self.pages.get_page_index() * self.pages.get_page_size())) for element in
+                       range(len(stock_names))]
         for i in range(len(stock_names)):
             target_stock = self.stocks.get_stock(stock_names[i])
             stock_trend = target_stock.get_stock_trend(28)
@@ -73,6 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                       QtWidgets.QLabel(f"{target_stock.get_ask_price()} {target_stock.get_currency()}"))
             stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
             stock_table.setCellWidget(i, 5, stock_graph.get_widget())
+        stock_table.setVerticalHeaderLabels(page_labels)
 
     def show_stock_info(self):
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")

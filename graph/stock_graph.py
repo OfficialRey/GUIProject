@@ -37,3 +37,20 @@ class StockGraph:
 
     def get_widget(self):
         return self.graph
+
+
+class CompareGraph:
+
+    def __init__(self, x: List[List[numpy.datetime64]], y: List[List[float]]):
+        self.graph = pyqtgraph.PlotWidget()
+        self.x = x
+        self.y = y
+
+    def plot_graph(self):
+        pass
+
+    def show_graph(self, index: int):
+        pass
+
+    def hide_graph(self, index: int):
+        pass

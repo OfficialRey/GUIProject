@@ -180,3 +180,7 @@ class Stonks:
 
     def get_stock_names(self) -> List[str]:
         return self.stock_names
+
+    def fetch(self):
+        for stock_name in self.stock_names:
+            _ = self.get_stock(stock_name)
