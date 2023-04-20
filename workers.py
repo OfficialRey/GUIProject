@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
+
 class StockTablePageWorker(QObject):
     finished = pyqtSignal()
 
@@ -10,7 +11,7 @@ class StockTablePageWorker(QObject):
 
     def run(self):
         if self.direction:
-            self.main_window.page.next_page()
+            self.main_window.pages.next_page()
         else:
-            self.main_window.page.previous_page()
+            self.main_window.pages.previous_page()
         self.finished.emit()

@@ -2,6 +2,7 @@ import sys
 import json
 
 from graph.stock_graph import StockGraph
+from logs.log import Logger
 from stock_data.stocks import Stonks
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 import hashlib
@@ -18,7 +19,8 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi("main.ui", self)
 
         self.stocks = Stonks()
-        self.page = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
+        self.logs = Logger()
+        self.pages = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
 
         self.set_stock_details(self.stocks.get_stock_names()[0])
 
@@ -32,6 +34,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.add_functions()
         self.update_stock_table()
         self.set_icons()
+
+        self.logs.log_message("Program launched.")
 
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
@@ -51,7 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
         info_label.setText("")
         stock_table.setRowCount(0)
-        stock_names = self.page.get_page()
+        stock_names = self.pages.get_page()
         for i in range(len(stock_names)):
             target_stock = self.stocks.get_stock(stock_names[i])
             stock_trend = target_stock.get_stock_trend(7)
@@ -94,8 +98,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.on_logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
-        self.findChild(QtWidgets.QPushButton, "stockTablePrevPage").clicked.connect(lambda: self.create_stock_table_page_thread(False))
-        self.findChild(QtWidgets.QPushButton, "stockTableNextPage").clicked.connect(lambda: self.create_stock_table_page_thread(True))
+        self.findChild(QtWidgets.QPushButton, "stockTablePrevPage").clicked.connect(
+            lambda: self.create_stock_table_page_thread(False))
+        self.findChild(QtWidgets.QPushButton, "stockTableNextPage").clicked.connect(
+            lambda: self.create_stock_table_page_thread(True))
 
     def create_stock_table_page_thread(self, direction: bool):
         info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
@@ -114,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
-    
+
         self.thread.start()
 
     def set_page_button_state(self, state: bool):

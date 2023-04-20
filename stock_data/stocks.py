@@ -1,3 +1,4 @@
+import time
 from typing import List
 from enum import Enum
 
@@ -33,6 +34,18 @@ class StockInfoKey:
     LONG_NAME = "longName"
 
 
+DEFAULT_STOCK_INFO = {
+    StockInfoKey.BID_PRICE: "No information",
+    StockInfoKey.BID_SIZE: "No information",
+    StockInfoKey.ASK_PRICE: "No information",
+    StockInfoKey.ASK_SIZE: "No information",
+    StockInfoKey.CURRENCY: "-",
+    StockInfoKey.TRADEABLE: "No information",
+    StockInfoKey.SHORT_NAME: "No information",
+    StockInfoKey.LONG_NAME: "No information"
+}
+
+
 class Period(Enum):
     ONE_DAY = "1d"
     ONE_WEEK = "7d"
@@ -57,8 +70,8 @@ class Stock:
         self.time_stamps = trend_data.index.values
         self.meta_data = self.create_meta_data()
 
-    def create_meta_data(self):
-        while True:
+    def create_meta_data(self, max_attempts: int = 5):
+        for i in range(max_attempts):
             try:
                 ticker_info = yfinance.Ticker(self.stock_name).info
                 return {StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
@@ -70,7 +83,9 @@ class Stock:
                         StockInfoKey.SHORT_NAME: get_value(StockInfoKey.SHORT_NAME, ticker_info),
                         StockInfoKey.LONG_NAME: get_value(StockInfoKey.LONG_NAME, ticker_info)}
             except HTTPError:
-                pass
+                time.sleep(0.1)
+
+        return DEFAULT_STOCK_INFO
 
     def get_stock_trend(self, period: int):
         return calculate_stock_trend(self.prices, period)
@@ -102,7 +117,7 @@ class Stock:
     def get_prices(self):
         return self.prices
 
-    def get_time_stamps(self):
+    def get_time_stamps(self) -> List[pd.Timestamp]:
         return self.time_stamps
 
 
