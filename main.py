@@ -50,6 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
         info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
         info_label.setText("")
         stock_table.setRowCount(0)
+        stock_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         stock_names = self.pages.get_page()
         for i in range(len(stock_names)):
             target_stock = self.stocks.get_stock(stock_names[i])
