@@ -53,8 +53,8 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_names = self.pages.get_page()
         for i in range(len(stock_names)):
             target_stock = self.stocks.get_stock(stock_names[i])
-            stock_trend = target_stock.get_stock_trend(7)
-            stock_graph = StockGraph(target_stock.get_time_stamps(), target_stock.get_prices())
+            stock_trend = target_stock.get_stock_trend(28)
+            stock_graph = StockGraph(target_stock.get_time_stamps(28), target_stock.get_prices(28))
             sign = "+" if stock_trend > 0 else ""
             icon = QtGui.QIcon("assets/info_logo.png")
             info_widget = QtWidgets.QPushButton()

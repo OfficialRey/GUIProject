@@ -1,11 +1,9 @@
-import time
 from typing import List
 from enum import Enum
 
 import numpy
 import pandas as pd
 import yfinance
-from requests import HTTPError
 
 from util.util import get_value, download_stock_names, download_stock_data, fill_data, \
     calculate_stock_trend
@@ -151,18 +149,22 @@ class Stock:
     def get_industry(self):
         return self.meta_data[StockInfoKey.INDUSTRY]
 
-    def get_prices(self):
-        return self.prices
+    def get_prices(self, period: int = -1):
+        if period == -1:
+            return self.prices
+        return self.prices[-period:]
 
-    def get_time_stamps(self) -> List[numpy.datetime64]:
-        return self.time_stamps
+    def get_time_stamps(self, period: int = -1) -> List[numpy.datetime64]:
+        if period == -1:
+            return self.time_stamps
+        return self.time_stamps[-period:]
 
 
 class Stonks:
 
     def __init__(self, stock_names=None):
         self.stock_names = download_stock_names(TICKER_LIST_URL) if stock_names is None else stock_names
-        self.stock_data = download_stock_data(self.stock_names, Period.SIX_MONTHS.value)
+        self.stock_data = download_stock_data(self.stock_names, Period.TEN_YEARS.value)
         self.stocks: dict = {}
 
     def get_stock(self, stock_name: str) -> Stock:
