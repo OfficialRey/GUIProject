@@ -12,7 +12,7 @@ def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
 
     for i in range(1, len(time_stamps) - 1):
         stamp = pd.Timestamp(time_stamps[i])
-        if stamp.day == 1 or stamp.day == stamp.days_in_month // 2:
+        if stamp.day == 1 or (stamp.day == stamp.days_in_month // 2 and False):
             content.append(time_stamp_to_string(stamp))
         else:
             content.append("")
@@ -20,6 +20,9 @@ def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
     content.append(time_stamp_to_string(time_stamps[-1]))
     content = dict(enumerate(content))
     return content
+
+
+COLORS = ["red", "blue"]
 
 
 class StockGraph:

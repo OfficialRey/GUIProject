@@ -2,6 +2,7 @@ import time
 from typing import List
 from enum import Enum
 
+import numpy
 import pandas as pd
 import yfinance
 from requests import HTTPError
@@ -32,6 +33,14 @@ class StockInfoKey:
     TRADEABLE = "tradeable"
     SHORT_NAME = "shortName"
     LONG_NAME = "longName"
+    INDUSTRY = "industry"
+    SECTOR = "sector"
+    WEBSITE = "website"
+    COUNTRY = "country"
+    CITY = "city"
+    DIVIDEND_RATE = "dividendRate"
+    DIVIDEND_YIELD = "dividendYield"
+    VOLUME = "volume"
 
 
 DEFAULT_STOCK_INFO = {
@@ -70,22 +79,26 @@ class Stock:
         self.time_stamps = trend_data.index.values
         self.meta_data = self.create_meta_data()
 
-    def create_meta_data(self, max_attempts: int = 5):
-        for i in range(max_attempts):
-            try:
-                ticker_info = yfinance.Ticker(self.stock_name).info
-                return {StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
-                        StockInfoKey.BID_SIZE: get_value(StockInfoKey.BID_SIZE, ticker_info),
-                        StockInfoKey.ASK_PRICE: get_value(StockInfoKey.ASK_PRICE, ticker_info),
-                        StockInfoKey.ASK_SIZE: get_value(StockInfoKey.ASK_SIZE, ticker_info),
-                        StockInfoKey.CURRENCY: get_value(StockInfoKey.CURRENCY, ticker_info),
-                        StockInfoKey.TRADEABLE: get_value(StockInfoKey.TRADEABLE, ticker_info),
-                        StockInfoKey.SHORT_NAME: get_value(StockInfoKey.SHORT_NAME, ticker_info),
-                        StockInfoKey.LONG_NAME: get_value(StockInfoKey.LONG_NAME, ticker_info)}
-            except HTTPError:
-                time.sleep(0.1)
-
-        return DEFAULT_STOCK_INFO
+    def create_meta_data(self):
+        ticker_info = yfinance.Ticker(self.stock_name).info
+        return {
+            StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
+            StockInfoKey.BID_SIZE: get_value(StockInfoKey.BID_SIZE, ticker_info),
+            StockInfoKey.ASK_PRICE: get_value(StockInfoKey.ASK_PRICE, ticker_info),
+            StockInfoKey.ASK_SIZE: get_value(StockInfoKey.ASK_SIZE, ticker_info),
+            StockInfoKey.CURRENCY: get_value(StockInfoKey.CURRENCY, ticker_info),
+            StockInfoKey.TRADEABLE: get_value(StockInfoKey.TRADEABLE, ticker_info),
+            StockInfoKey.SHORT_NAME: get_value(StockInfoKey.SHORT_NAME, ticker_info),
+            StockInfoKey.LONG_NAME: get_value(StockInfoKey.LONG_NAME, ticker_info),
+            StockInfoKey.WEBSITE: get_value(StockInfoKey.WEBSITE, ticker_info),
+            StockInfoKey.COUNTRY: get_value(StockInfoKey.COUNTRY, ticker_info),
+            StockInfoKey.CITY: get_value(StockInfoKey.CITY, ticker_info),
+            StockInfoKey.SECTOR: get_value(StockInfoKey.SECTOR, ticker_info),
+            StockInfoKey.INDUSTRY: get_value(StockInfoKey.INDUSTRY, ticker_info),
+            StockInfoKey.VOLUME: get_value(StockInfoKey.VOLUME, ticker_info),
+            StockInfoKey.DIVIDEND_RATE: get_value(StockInfoKey.DIVIDEND_RATE, ticker_info),
+            StockInfoKey.DIVIDEND_YIELD: get_value(StockInfoKey.DIVIDEND_YIELD, ticker_info)
+        }
 
     def get_stock_trend(self, period: int):
         return calculate_stock_trend(self.prices, period)
@@ -114,10 +127,34 @@ class Stock:
     def get_long_name(self):
         return self.meta_data[StockInfoKey.LONG_NAME]
 
+    def get_dividend_rate(self):
+        return self.meta_data[StockInfoKey.DIVIDEND_RATE]
+
+    def get_dividend_yield(self):
+        return self.meta_data[StockInfoKey.DIVIDEND_YIELD]
+
+    def get_country(self):
+        return self.meta_data[StockInfoKey.COUNTRY]
+
+    def get_city(self):
+        return self.meta_data[StockInfoKey.CITY]
+
+    def get_volume(self):
+        return self.meta_data[StockInfoKey.VOLUME]
+
+    def get_website(self):
+        return self.meta_data[StockInfoKey.WEBSITE]
+
+    def get_sector(self):
+        return self.meta_data[StockInfoKey.SECTOR]
+
+    def get_industry(self):
+        return self.meta_data[StockInfoKey.INDUSTRY]
+
     def get_prices(self):
         return self.prices
 
-    def get_time_stamps(self) -> List[pd.Timestamp]:
+    def get_time_stamps(self) -> List[numpy.datetime64]:
         return self.time_stamps
 
 
