@@ -1,6 +1,7 @@
 import math
-from typing import List
+from typing import List, Union
 
+import numpy
 import pandas as pd
 import requests
 import yfinance
@@ -48,7 +49,9 @@ def download_stock_names(url: str):
         raise ConnectionError("Cannot get ticker file")'''
 
 
-def time_stamp_to_string(time_stamp: pd.Timestamp) -> str:
+def time_stamp_to_string(time_stamp: Union[pd.Timestamp, numpy.datetime64]) -> str:
+    if isinstance(time_stamp, numpy.datetime64):
+        time_stamp = pd.Timestamp(time_stamp)
     return f"{time_stamp.day}.{time_stamp.month}.{time_stamp.year}"
 
 
