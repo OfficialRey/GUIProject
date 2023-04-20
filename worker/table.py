@@ -1,17 +1,17 @@
 from PyQt5.QtCore import QObject, pyqtSignal
+from stock_data.stocks import Stock, Stonks
 
 
-class StockTablePageWorker(QObject):
+class StockTableItemWorker(QObject):
     finished = pyqtSignal()
+    progress = pyqtSignal(Stock)
 
-    def __init__(self, main_window, direction: bool):
-        super(StockTablePageWorker, self).__init__()
-        self.main_window = main_window
-        self.direction = direction
-
+    def __init__(self, stonks_inst: Stonks):
+        super(StockTableItemWorker, self).__init__()
+        self.stonks_inst = stonks_inst
+    
     def run(self):
-        if self.direction:
-            self.main_window.pages.next_page()
-        else:
-            self.main_window.pages.previous_page()
+        for stock_name in self.stonks_inst.get_stock_names():
+            stock = self.stonks_inst.get_stock(stock_name)
+            self.progress.emit(stock)
         self.finished.emit()

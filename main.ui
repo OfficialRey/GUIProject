@@ -115,7 +115,7 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -649,6 +649,9 @@
              <layout class="QHBoxLayout" name="stockTableNavLayout">
               <item>
                <widget class="QPushButton" name="stockTablePrevPage">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
@@ -656,6 +659,9 @@
               </item>
               <item>
                <widget class="QPushButton" name="stockTableNextPage">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
@@ -677,7 +683,7 @@
               <item>
                <widget class="QLabel" name="stockTableLoadingIndicator">
                 <property name="text">
-                 <string/>
+                 <string>Loading...</string>
                 </property>
                </widget>
               </item>
@@ -697,7 +703,7 @@
               <item>
                <widget class="QLabel" name="pageNumberLabel">
                 <property name="text">
-                 <string>Page 1</string>
+                 <string>Page 1 / 1</string>
                 </property>
                </widget>
               </item>

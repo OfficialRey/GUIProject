@@ -98,6 +98,9 @@ class Stock:
             StockInfoKey.DIVIDEND_YIELD: get_value(StockInfoKey.DIVIDEND_YIELD, ticker_info)
         }
 
+    def get_name(self):
+        return self.stock_name
+
     def get_stock_trend(self, period: int):
         return calculate_stock_trend(self.prices, period)
 

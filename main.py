@@ -4,10 +4,10 @@ from PyQt5.QtWidgets import QHBoxLayout
 
 from graph.stock_graph import StockGraph
 from logs.log import log_message
-from stock_data.stocks import Stonks
+from stock_data.stocks import Stonks, Stock
 from user.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
-from worker.table import StockTablePageWorker
+from worker.table import StockTableItemWorker
 
 from stock_data.stock_page import StockPage
 
@@ -19,11 +19,8 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi("main.ui", self)
 
         self.stocks = Stonks()
-        self.stocks.fetch()
-        self.pages = StockPage(stock_names=self.stocks.get_stock_names(), page_contents=10)
-
+        self.start_stock_loader_thread()
         self.set_stock_details(self.stocks.get_stock_names()[0])
-
         self.user_manager = User()
 
         with open("style.qss") as f:
@@ -31,10 +28,26 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_user_tab_state(False)
         self.add_functions()
-        self.update_stock_table()
+        self.init_stock_table()
         self.set_icons()
 
         log_message("GUI launched")
+
+    def start_stock_loader_thread(self):
+        self.loader_thread = QtCore.QThread()
+
+        self.worker = StockTableItemWorker(self.stocks)
+        self.worker.moveToThread(self.loader_thread)
+
+        self.loader_thread.started.connect(self.worker.run)
+        self.worker.progress.connect(self.stock_table_append)
+        self.worker.finished.connect(self.on_stock_table_load_finished)
+
+        self.worker.finished.connect(self.loader_thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.loader_thread.finished.connect(self.loader_thread.deleteLater)
+
+        self.loader_thread.start()
 
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
@@ -61,42 +74,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
         self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
         self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
-        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividende: {target_stock.get_dividend_yield() * 100}%")
-        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividende: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
+        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividend: {target_stock.get_dividend_yield() * 100}%")
+        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
 
-        # TODO: load further info like category and market capital and graph of last 6 months
-
-    def update_stock_table(self):
+    def init_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        stock_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+        stock_table.verticalHeader().setDefaultSectionSize(120)
+
+    def on_stock_table_load_finished(self):
         info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
         info_label.setText("")
-        stock_table.setRowCount(0)
-        stock_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        stock_names = self.pages.get_page()
-        page_labels = [str(1 + element + (self.pages.get_page_index() * self.pages.get_page_size())) for element in
-                       range(len(stock_names))]
-        for i in range(len(stock_names)):
-            target_stock = self.stocks.get_stock(stock_names[i])
-            stock_trend = target_stock.get_stock_trend(28)
-            stock_graph = StockGraph(target_stock.get_time_stamps(28), target_stock.get_prices(28))
-            sign = "+" if stock_trend > 0 else ""
-            icon = QtGui.QIcon("assets/info_logo.png")
-            info_widget = QtWidgets.QPushButton()
-            info_widget.setIcon(icon)
-            info_widget.clicked.connect(self.show_stock_info)
-            stock_table.insertRow(stock_table.rowCount())
 
-            vertical_header = stock_table.verticalHeader()
-            vertical_header.setDefaultSectionSize(120)
+    def stock_table_append(self, stock: Stock):
+        stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
 
-            stock_table.setCellWidget(i, 0, info_widget)
-            stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock_names[i]}"))
-            stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{target_stock.get_long_name()}"))
-            stock_table.setCellWidget(i, 3,
-                                      QtWidgets.QLabel(f"{target_stock.get_ask_price()} {target_stock.get_currency()}"))
-            stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
-            stock_table.setCellWidget(i, 5, stock_graph.get_widget())
-        stock_table.setVerticalHeaderLabels(page_labels)
+        stock_trend = stock.get_stock_trend(28)
+        stock_graph = StockGraph(stock.get_time_stamps(28), stock.get_prices(28))
+        sign = "+" if stock_trend > 0 else ""
+        icon = QtGui.QIcon("assets/info_logo.png")
+        info_widget = QtWidgets.QPushButton()
+        info_widget.setIcon(icon)
+        info_widget.clicked.connect(self.show_stock_info)
+
+        i = stock_table.rowCount()
+        stock_table.insertRow(i)
+
+        stock_table.setCellWidget(i, 0, info_widget)
+        stock_table.setCellWidget(i, 1, QtWidgets.QLabel(f"{stock.get_name()}"))
+        stock_table.setCellWidget(i, 2, QtWidgets.QLabel(f"{stock.get_long_name()}"))
+        stock_table.setCellWidget(i, 3,
+                                    QtWidgets.QLabel(f"{stock.get_ask_price()} {stock.get_currency()}"))
+        stock_table.setCellWidget(i, 4, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
+        stock_table.setCellWidget(i, 5, stock_graph.get_widget())
 
     def show_stock_info(self):
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -118,30 +128,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.on_logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
-        self.findChild(QtWidgets.QPushButton, "stockTablePrevPage").clicked.connect(
-            lambda: self.create_stock_table_page_thread(False))
-        self.findChild(QtWidgets.QPushButton, "stockTableNextPage").clicked.connect(
-            lambda: self.create_stock_table_page_thread(True))
-
-    def create_stock_table_page_thread(self, direction: bool):
-        info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
-        info_label.setText("Loading...")
-        self.set_page_button_state(False)
-
-        self.thread = QtCore.QThread()
-
-        self.worker = StockTablePageWorker(self, direction)
-        self.worker.moveToThread(self.thread)
-
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.update_stock_table)
-        self.worker.finished.connect(lambda: self.set_page_button_state(True))
-
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-
-        self.thread.start()
 
     def set_page_button_state(self, state: bool):
         prev = self.findChild(QtWidgets.QPushButton, "stockTablePrevPage")
