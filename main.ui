@@ -115,7 +115,7 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -655,6 +655,13 @@
                </widget>
               </item>
               <item>
+               <widget class="QPushButton" name="stockTableNextPage">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item>
                <spacer name="horizontalSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -688,9 +695,9 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="stockTableNextPage">
+               <widget class="QLabel" name="pageNumberLabel">
                 <property name="text">
-                 <string/>
+                 <string>Page 1</string>
                 </property>
                </widget>
               </item>
@@ -712,11 +719,25 @@
           <item>
            <layout class="QHBoxLayout" name="stockInfoLayout">
             <item>
-             <widget class="QLabel" name="stockName">
-              <property name="text">
-               <string>[Name]</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="furtherStockInfoLayout3">
+              <item>
+               <widget class="QLabel" name="stockName">
+                <property name="text">
+                 <string>[Name]</string>
+                </property>
+                <property name="openExternalLinks">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="stockCountry">
+                <property name="text">
+                 <string>[Country]</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <layout class="QVBoxLayout" name="furtherStockInfoLayout">
@@ -746,16 +767,23 @@
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="stockMarketCap">
+               <widget class="QLabel" name="stockVolume">
                 <property name="text">
-                 <string>[Market Cap]</string>
+                 <string>[Volume]</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="stockVolume">
+               <widget class="QLabel" name="stockDividendRate">
                 <property name="text">
-                 <string>[Volume]</string>
+                 <string>[Div Rate]</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="stockDividendYield">
+                <property name="text">
+                 <string>[Div Yield]</string>
                 </property>
                </widget>
               </item>

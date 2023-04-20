@@ -39,7 +39,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
         target_stock = self.stocks.get_stock(stock_id)
-        stock_name.setText(f"{target_stock.get_long_name()} ({stock_id})")
+        stock_name.setText(f"<a href={target_stock.get_website()}>{target_stock.get_long_name()} ({stock_id})</a>")
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
         stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
@@ -58,6 +58,11 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"({sign}{'{:4.2f}'.format(stock_trend)}%)")
+        self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
+        self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
+        self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
+        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividende: {target_stock.get_dividend_yield() * 100}%")
+        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividende: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
 
         # TODO: load further info like category and market capital and graph of last 6 months
 
