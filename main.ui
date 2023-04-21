@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>750</width>
+    <width>823</width>
     <height>693</height>
    </rect>
   </property>
@@ -568,6 +568,23 @@
                 </widget>
                </item>
                <item>
+                <widget class="QLabel" name="stockYieldLabel">
+                 <property name="text">
+                  <string>Dividend Yield</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSlider" name="stockYieldFilter">
+                 <property name="maximum">
+                  <number>25</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <spacer name="verticalSpacer">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
@@ -605,7 +622,7 @@
                <bool>true</bool>
               </property>
               <property name="columnCount">
-               <number>6</number>
+               <number>7</number>
               </property>
               <attribute name="horizontalHeaderCascadingSectionResizes">
                <bool>true</bool>
@@ -636,6 +653,11 @@
               <column>
                <property name="text">
                 <string>Diff</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Yield</string>
                </property>
               </column>
               <column>
@@ -813,7 +835,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>750</width>
+     <width>823</width>
      <height>22</height>
     </rect>
    </property>
