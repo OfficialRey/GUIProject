@@ -6,7 +6,6 @@ from user.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
-import re
 
 
 class StockTableColumn(Enum):
@@ -78,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(graph.get_widget())
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
-        stock_price_diff.setText(f"({sign}{'{:4.2f}'.format(stock_trend)}%)")
+        stock_price_diff.setText(f"{sign}{'{:4.2f}'.format(stock_trend)}%")
         self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
         self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
         self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
@@ -93,10 +92,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_stock_table_load_finished(self):
         info_label: QtWidgets.QLabel = self.findChild(QtWidgets.QLabel, "stockTableLoadingIndicator")
         info_label.setText("")
+        self.findChild(QtWidgets.QTableWidget, "stockDetailTable").setSortingEnabled(True)
         log_message("Finished loading stock details")
 
     def stock_table_append(self, stock: Stock):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        price_filter_min = self.findChild(QtWidgets.QSlider, "stockPriceFilter")
+        price_filter_max = self.findChild(QtWidgets.QSlider, "stockPriceFilter2")
+
+        if stock.get_ask_price() > price_filter_min.maximum():
+            new_max = int(stock.get_ask_price()) + 2
+            price_filter_min.setMaximum(new_max)
+            price_filter_max.setMaximum(new_max)
 
         stock_trend = stock.get_stock_trend(28)
         stock_graph = StockGraph(stock.get_time_stamps(28), stock.get_prices(28))
@@ -110,21 +117,35 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_table.insertRow(i)
 
         stock_table.setCellWidget(i, StockTableColumn.INFO.value, info_widget)
-        stock_table.setCellWidget(i, StockTableColumn.ID.value, QtWidgets.QLabel(f"{stock.get_name()}"))
-        stock_table.setCellWidget(i, StockTableColumn.NAME.value, QtWidgets.QLabel(f"{stock.get_long_name()}"))
-        stock_table.setCellWidget(i, StockTableColumn.PRICE.value,
-                                    QtWidgets.QLabel(f"{stock.get_ask_price()} {stock.get_currency()}"))
-        stock_table.setCellWidget(i, StockTableColumn.DIFF.value, QtWidgets.QLabel(f"({sign}{'{:4.2f}'.format(stock_trend)}%)"))
+        self.set_table_cell_data(i, StockTableColumn.ID.value, stock.get_name())
+        self.set_table_cell_data(i, StockTableColumn.NAME.value, stock.get_long_name())
+        self.set_table_cell_data(i, StockTableColumn.PRICE.value, stock.get_ask_price())
+        self.set_table_cell_data(i, StockTableColumn.DIFF.value, f"{sign}{'{:4.2f}'.format(stock_trend)}%")
         stock_table.setCellWidget(i, StockTableColumn.GRAPH.value, stock_graph.get_widget())
-        stock_table.setCellWidget(i, StockTableColumn.YIELD.value, QtWidgets.QLabel(f"{round(stock.get_dividend_yield() * 100, 4)}%"))
+        self.set_table_cell_data(i, StockTableColumn.YIELD.value, round(stock.get_dividend_yield() * 100, 4))
 
         self.on_search_changed()
+
+    def set_table_cell_data(self, row, col, value):
+        stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        item = stock_table.item(row, col)
+        if not item:
+            item = QtWidgets.QTableWidgetItem()
+            stock_table.setItem(row, col, item)
+        item.setData(QtCore.Qt.ItemDataRole.DisplayRole, value)
+
+    def get_table_cell_data(self, row, col):
+        stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        item = stock_table.item(row, col)
+        if not item:
+            return ""
+        return item.data(QtCore.Qt.ItemDataRole.DisplayRole)
 
     def show_stock_info(self):
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         row = table.currentRow()
 
-        stock_id = table.cellWidget(row, StockTableColumn.ID.value).text()
+        stock_id = self.get_table_cell_data(row, StockTableColumn.ID.value)
         self.set_stock_details(stock_id)
 
         tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
@@ -236,11 +257,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         for i in range(stock_table.rowCount()):
-            name = stock_table.cellWidget(i, StockTableColumn.NAME.value).text()
-            price_text = stock_table.cellWidget(i, StockTableColumn.PRICE.value).text()
-            price = float(re.findall("\d+\.\d+", price_text)[0])
-            diff = stock_table.cellWidget(i, StockTableColumn.DIFF.value).text()
-            stock_yield = float(stock_table.cellWidget(i, StockTableColumn.YIELD.value).text()[:-1])
+            name = self.get_table_cell_data(i, StockTableColumn.NAME.value)
+            price = self.get_table_cell_data(i, StockTableColumn.PRICE.value)
+            diff = self.get_table_cell_data(i, StockTableColumn.DIFF.value)
+            stock_yield = self.get_table_cell_data(i, StockTableColumn.YIELD.value)
             if search.lower() not in name.lower() or price < value_lower or price > value_upper or \
                 ("+" in diff and not positive_check) or ("-" in diff and not negative_check) or stock_yield < yield_slider_value:
                     stock_table.hideRow(i)
