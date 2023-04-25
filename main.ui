@@ -53,13 +53,6 @@
        </widget>
       </item>
       <item>
-       <widget class="Line" name="line2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="userInfoBalance">
         <property name="text">
          <string>Your Balance:</string>
@@ -70,13 +63,6 @@
        <widget class="QLabel" name="userInfoBalanceValue">
         <property name="text">
          <string>0.00€</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -115,7 +101,7 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -344,6 +330,9 @@
               <property name="echoMode">
                <enum>QLineEdit::Password</enum>
               </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
              </widget>
             </item>
            </layout>
@@ -376,6 +365,9 @@
               </property>
               <property name="echoMode">
                <enum>QLineEdit::Password</enum>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -412,6 +404,9 @@
               </property>
               <property name="echoMode">
                <enum>QLineEdit::Password</enum>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -615,6 +610,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
               <property name="verticalScrollMode">
                <enum>QAbstractItemView::ScrollPerPixel</enum>
               </property>
@@ -746,7 +744,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <layout class="QVBoxLayout" name="stockDetailsMainLayout" stretch="2,0,10">
+         <layout class="QVBoxLayout" name="stockDetailsMainLayout" stretch="2,0,0,10">
           <item>
            <layout class="QHBoxLayout" name="stockInfoLayout">
             <item>
@@ -823,6 +821,13 @@
            </layout>
           </item>
           <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QComboBox" name="graphPeriodSelection">
@@ -890,6 +895,26 @@
               </property>
              </spacer>
             </item>
+            <item>
+             <widget class="QPushButton" name="buyStockButton">
+              <property name="text">
+               <string>Buy</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="buyStockAmount">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>99999</number>
+              </property>
+              <property name="value">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>
@@ -917,6 +942,7 @@
      <string>File</string>
     </property>
     <addaction name="actionExit"/>
+    <addaction name="actionStyleSheet"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -934,6 +960,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionStyleSheet">
+   <property name="text">
+    <string>Update Style Sheet</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+U</string>
    </property>
   </action>
  </widget>

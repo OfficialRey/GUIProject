@@ -42,15 +42,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_stock_details(self.stocks.get_stock_names()[0])
         self.user_manager = User()
 
-        with open("style.qss") as f:
-            self.setStyleSheet(f.read().strip())
-
+        self.load_style_sheet("style.qss")
         self.set_user_tab_state(False)
         self.add_functions()
         self.init_stock_table()
         self.set_icons()
 
         log_message("GUI launched")
+
+    def load_style_sheet(self, filename):
+        with open(filename, "r") as f:
+            self.setStyleSheet(f.read().strip())
 
     def start_stock_loader_thread(self):
         self.loader_thread = QtCore.QThread()
@@ -105,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
         self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
         self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
-        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividend: {target_stock.get_dividend_yield() * 100}%")
+        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividend: {round(target_stock.get_dividend_yield() * 100, 2)}%")
         self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
 
     def init_stock_table(self):
@@ -184,6 +186,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QSlider, "stockYieldFilter").valueChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QPushButton, "loginButton").clicked.connect(self.on_login_button)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
+        self.findChild(QtWidgets.QAction, "actionStyleSheet").triggered.connect(lambda: self.load_style_sheet("style.qss"))
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.on_logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
         self.findChild(QtWidgets.QComboBox, "graphPeriodSelection").currentIndexChanged.connect(self.on_period_changed)
