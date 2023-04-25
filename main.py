@@ -6,6 +6,7 @@ from user.user import User
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
+from re import findall
 
 
 class StockTableColumn(Enum):
@@ -16,6 +17,18 @@ class StockTableColumn(Enum):
     DIFF = 4
     YIELD = 5
     GRAPH = 6
+
+
+period_days = {
+    "7 days": 7,
+    "1 month": 30,
+    "3 months": 90,
+    "6 months": 182,
+    "1 year": 365,
+    "2 years": 365 * 2,
+    "5 years": 365 * 5,
+    "10 years": 365 * 10
+}
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -56,6 +69,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loader_thread.start()
         log_message("Started loading stock details")
 
+    def on_period_changed(self):
+        current_stock = self.findChild(QtWidgets.QLabel, "stockName").text()
+        stock_id = findall("(\w+.DE)", current_stock)[-1]
+        self.set_detail_graph(self.stocks.get_stock(stock_id))
+
+    def set_detail_graph(self, stock):
+        stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
+        period_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPeriodSelection")
+        period = period_days[period_selection.currentText()]
+        layout = stock_graph.layout()
+        if layout is not None:
+            # Clear layout
+            for i in reversed(range(layout.count())):
+                layout.itemAt(i).widget().setParent(None)
+        else:
+            layout = QtWidgets.QHBoxLayout()
+            stock_graph.setLayout(layout)
+        graph = StockGraph(stock.get_time_stamps(period), stock.get_prices(period))
+        layout.addWidget(graph.get_widget())
+
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
         target_stock = self.stocks.get_stock(stock_id)
@@ -63,18 +96,9 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
         stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
-        stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
 
-        # Clear layout
-        layout = stock_graph.layout()
-        if layout is not None:
-            for i in reversed(range(layout.count())):
-                layout.itemAt(i).widget().setParent(None)
-        else:
-            layout = QtWidgets.QHBoxLayout()
-            stock_graph.setLayout(layout)
-        graph = StockGraph(target_stock.get_time_stamps(365), target_stock.get_prices(365))
-        layout.addWidget(graph.get_widget())
+        self.set_detail_graph(target_stock)
+
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"{sign}{'{:4.2f}'.format(stock_trend)}%")
@@ -162,6 +186,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.on_logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
+        self.findChild(QtWidgets.QComboBox, "graphPeriodSelection").currentIndexChanged.connect(self.on_period_changed)
 
     def set_page_button_state(self, state: bool):
         prev = self.findChild(QtWidgets.QPushButton, "stockTablePrevPage")
