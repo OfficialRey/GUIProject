@@ -3,7 +3,6 @@ from typing import List, Union
 
 import numpy
 import pandas as pd
-import requests
 import yfinance
 
 MONTHS_IN_YEAR = 12

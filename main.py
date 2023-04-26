@@ -2,7 +2,7 @@ import sys
 from graph.stock_graph import StockGraph
 from logs.log import log_message
 from stock_data.stocks import Stonks, Stock
-from user.user import User
+from user.user import User, Database, exists_user, load_user
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
@@ -19,6 +19,8 @@ class StockTableColumn(Enum):
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    current_user: User
+
     def __init__(self):
         super(MainWindow, self).__init__()
         self.worker = None
@@ -27,7 +29,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stocks = Stonks()
         self.start_stock_loader_thread()
         self.set_stock_details(self.stocks.get_stock_names()[0])
-        self.user_manager = User()
+
+        self.database = Database()
 
         with open("style.qss") as f:
             self.setStyleSheet(f.read().strip())
@@ -78,11 +81,14 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"{sign}{'{:4.2f}'.format(stock_trend)}%")
-        self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
+        self.findChild(QtWidgets.QLabel, "stockCountry").setText(
+            f"{target_stock.get_country()}, {target_stock.get_city()}")
         self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
         self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
-        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividend: {target_stock.get_dividend_yield() * 100}%")
-        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
+        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(
+            f"Dividend: {target_stock.get_dividend_yield() * 100}%")
+        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(
+            f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
 
     def init_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -160,7 +166,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QSlider, "stockYieldFilter").valueChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QPushButton, "loginButton").clicked.connect(self.on_login_button)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
-        self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.on_logout)
+        self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
 
     def set_page_button_state(self, state: bool):
@@ -173,31 +179,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close()
 
     def change_password(self):
+        if self.current_user is None:
+            return
+
         current_pwd = self.findChild(QtWidgets.QLineEdit, "currentPassword")
         new_pwd = self.findChild(QtWidgets.QLineEdit, "newPassword")
         confirm_pwd = self.findChild(QtWidgets.QLineEdit, "confirmPassword")
 
+        if self.current_user.check_password(current_pwd.text()):
+            self.mark_invalid_input(current_pwd)
+            return
+
         if new_pwd.text() == confirm_pwd.text():
-            if self.user_manager.change_password(current_pwd.text(), new_pwd.text()):
+            if self.current_user.change_password(new_pwd.text()):
                 current_pwd.setText("")
                 new_pwd.setText("")
                 confirm_pwd.setText("")
                 current_pwd.setStyleSheet("")
                 confirm_pwd.setStyleSheet("")
-            else:
-                self.mark_invalid_input(current_pwd)
         else:
             self.mark_invalid_input(confirm_pwd)
 
     def on_login_button(self):
+
         username_input = self.findChild(QtWidgets.QLineEdit, "usernameLineEdit")
         password_input = self.findChild(QtWidgets.QLineEdit, "passwordLineEdit")
 
-        if self.user_manager.exists(username_input.text()):
-            if self.user_manager.check_password(password_input.text(), username_input.text()):
-                self.on_login(username_input.text())
-                password_input.setStyleSheet("")
-                username_input.setStyleSheet("")
+        if exists_user(username_input.text(), self.database):
+            temp_user = load_user(username_input.text(), password_input.text(), self.database)
+            if temp_user is not None:
+                self.login(temp_user)
+                self.current_user = temp_user
             else:
                 self.mark_invalid_input(password_input)
         else:
@@ -206,21 +218,26 @@ class MainWindow(QtWidgets.QMainWindow):
     def mark_invalid_input(self, widget: QtWidgets.QWidget):
         widget.setStyleSheet("border: 1px solid red; padding-top: 2px; padding-bottom: 2px; border-radius: 2px;")
 
-    def on_login(self, username):
-        self.user_manager.set_user(username)
-        balance = self.user_manager.get_balance()
+    def login(self, user: User):
+        self.current_user = user
+        balance = self.current_user.get_balance_cents()
         self.findChild(QtWidgets.QLabel, "userInfoBalanceValue").setText("{:.2f}€".format(balance))
-        self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("Hi, {}".format(username))
+        self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("Hi, {}".format(user.get_user_name()))
         self.set_login_tab_state(False)
         self.set_user_tab_state(True)
         self.findChild(QtWidgets.QTabWidget, "tabWidget").setCurrentIndex(1)
+        balance = self.findChild(QtWidgets.QLabel, "userInfoBalanceValue")
+        balance.setText(user.get_balance_string())
+        balance.show()
 
-    def on_logout(self):
+    def logout(self):
+        self.current_user = None
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tabWidget.setTabEnabled(0, True)
         tabWidget.setStyleSheet(tabWidget.styleSheet())
         balance = self.findChild(QtWidgets.QLabel, "userInfoBalanceValue")
         balance.setText("0.00€")
+        balance.hide()
         self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("")
         self.findChild(QtWidgets.QLineEdit, "usernameLineEdit").setText("")
         self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setText("")
@@ -262,8 +279,9 @@ class MainWindow(QtWidgets.QMainWindow):
             diff = self.get_table_cell_data(i, StockTableColumn.DIFF.value)
             stock_yield = self.get_table_cell_data(i, StockTableColumn.YIELD.value)
             if search.lower() not in name.lower() or price < value_lower or price > value_upper or \
-                ("+" in diff and not positive_check) or ("-" in diff and not negative_check) or stock_yield < yield_slider_value:
-                    stock_table.hideRow(i)
+                    ("+" in diff and not positive_check) or (
+                    "-" in diff and not negative_check) or stock_yield < yield_slider_value:
+                stock_table.hideRow(i)
             else:
                 stock_table.showRow(i)
 
