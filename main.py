@@ -6,6 +6,7 @@ from user.user import User, Database, exists_user, load_user
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
+from re import findall
 
 
 class StockTableColumn(Enum):
@@ -16,6 +17,18 @@ class StockTableColumn(Enum):
     DIFF = 4
     YIELD = 5
     GRAPH = 6
+
+
+period_days = {
+    "7 days": 7,
+    "1 month": 30,
+    "3 months": 90,
+    "6 months": 182,
+    "1 year": 365,
+    "2 years": 365 * 2,
+    "5 years": 365 * 5,
+    "10 years": 365 * 10
+}
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -32,15 +45,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.database = Database()
 
-        with open("style.qss") as f:
-            self.setStyleSheet(f.read().strip())
-
+        self.load_style_sheet("style.qss")
         self.set_user_tab_state(False)
         self.add_functions()
         self.init_stock_table()
         self.set_icons()
 
         log_message("GUI launched")
+
+    def load_style_sheet(self, filename):
+        with open(filename, "r") as f:
+            self.setStyleSheet(f.read().strip())
 
     def start_stock_loader_thread(self):
         self.loader_thread = QtCore.QThread()
@@ -59,6 +74,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loader_thread.start()
         log_message("Started loading stock details")
 
+    def on_period_changed(self):
+        current_stock = self.findChild(QtWidgets.QLabel, "stockName").text()
+        stock_id = findall("(\w+.DE)", current_stock)[-1]
+        self.set_detail_graph(self.stocks.get_stock(stock_id))
+
+    def set_detail_graph(self, stock):
+        stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
+        period_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPeriodSelection")
+        period = period_days[period_selection.currentText()]
+        layout = stock_graph.layout()
+        if layout is not None:
+            # Clear layout
+            for i in reversed(range(layout.count())):
+                layout.itemAt(i).widget().setParent(None)
+        else:
+            layout = QtWidgets.QHBoxLayout()
+            stock_graph.setLayout(layout)
+        graph = StockGraph(stock.get_time_stamps(period), stock.get_prices(period))
+        layout.addWidget(graph.get_widget())
+
     def set_stock_details(self, stock_id):
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
         target_stock = self.stocks.get_stock(stock_id)
@@ -66,29 +101,17 @@ class MainWindow(QtWidgets.QMainWindow):
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
         stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
-        stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
 
-        # Clear layout
-        layout = stock_graph.layout()
-        if layout is not None:
-            for i in reversed(range(layout.count())):
-                layout.itemAt(i).widget().setParent(None)
-        else:
-            layout = QtWidgets.QHBoxLayout()
-            stock_graph.setLayout(layout)
-        graph = StockGraph(target_stock.get_time_stamps(365), target_stock.get_prices(365))
-        layout.addWidget(graph.get_widget())
+        self.set_detail_graph(target_stock)
+
         stock_trend = target_stock.get_stock_trend(7)
         sign = "+" if stock_trend > 0 else ""
         stock_price_diff.setText(f"{sign}{'{:4.2f}'.format(stock_trend)}%")
-        self.findChild(QtWidgets.QLabel, "stockCountry").setText(
-            f"{target_stock.get_country()}, {target_stock.get_city()}")
+        self.findChild(QtWidgets.QLabel, "stockCountry").setText(f"{target_stock.get_country()}, {target_stock.get_city()}")
         self.findChild(QtWidgets.QLabel, "stockCategory").setText(f"{target_stock.get_sector()}")
         self.findChild(QtWidgets.QLabel, "stockVolume").setText(f"Volume: {target_stock.get_volume()}")
-        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(
-            f"Dividend: {target_stock.get_dividend_yield() * 100}%")
-        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(
-            f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
+        self.findChild(QtWidgets.QLabel, "stockDividendRate").setText(f"Dividend: {round(target_stock.get_dividend_yield() * 100, 2)}%")
+        self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(f"Dividend: {target_stock.get_dividend_rate()} {target_stock.get_currency()}")
 
     def init_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -166,8 +189,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QSlider, "stockYieldFilter").valueChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QPushButton, "loginButton").clicked.connect(self.on_login_button)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
+        self.findChild(QtWidgets.QAction, "actionStyleSheet").triggered.connect(lambda: self.load_style_sheet("style.qss"))
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
+        self.findChild(QtWidgets.QComboBox, "graphPeriodSelection").currentIndexChanged.connect(self.on_period_changed)
 
     def set_page_button_state(self, state: bool):
         prev = self.findChild(QtWidgets.QPushButton, "stockTablePrevPage")
@@ -237,7 +262,6 @@ class MainWindow(QtWidgets.QMainWindow):
         tabWidget.setStyleSheet(tabWidget.styleSheet())
         balance = self.findChild(QtWidgets.QLabel, "userInfoBalanceValue")
         balance.setText("0.00€")
-        balance.hide()
         self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("")
         self.findChild(QtWidgets.QLineEdit, "usernameLineEdit").setText("")
         self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setText("")
