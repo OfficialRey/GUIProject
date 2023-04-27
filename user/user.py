@@ -6,6 +6,7 @@ from json import JSONDecodeError
 from logs.log import log_message
 
 DEFAULT_FILE = "users.dat"
+DEFAULT_USER_BALANCE = 1000000
 
 
 def generate_hash_key(password: str) -> str:
@@ -85,7 +86,7 @@ def exists_user(user_name: str, database: Database):
     return user_name in content
 
 
-def create_user(user_name: str, password: str, balance: int, database: Database):
+def create_user(user_name: str, password: str, database: Database, balance: int = DEFAULT_USER_BALANCE):
     hash_key = generate_hash_key(password)
     user = User(user_name, hash_key, {}, balance, database)
     database.save_user(user)

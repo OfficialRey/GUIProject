@@ -2,7 +2,7 @@ import sys
 from graph.stock_graph import StockGraph
 from logs.log import log_message
 from stock_data.stocks import Stonks, Stock
-from user.user import User, Database, exists_user, load_user
+from user.user import User, Database, exists_user, load_user, create_user
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
@@ -17,6 +17,15 @@ class StockTableColumn(Enum):
     DIFF = 4
     YIELD = 5
     GRAPH = 6
+
+
+class TabNames(Enum):
+    LOGIN = 0
+    REGISTER = 1
+    USER = 2
+    STOCK_LIST = 3
+    STOCK_DETAILS = 4
+    PORTFOLIO = 5
 
 
 period_days = {
@@ -46,7 +55,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.database = Database()
 
         self.load_style_sheet("style.qss")
-        self.set_user_tab_state(False)
+        self.set_tab_state(TabNames.USER.value, False)
+        self.set_tab_state(TabNames.REGISTER.value, False)
+        self.set_tab_state(TabNames.PORTFOLIO.value, False)
         self.add_functions()
         self.init_stock_table()
         self.set_icons()
@@ -178,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_stock_details(stock_id)
 
         tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
-        tab_widget.setCurrentIndex(3)
+        tab_widget.setCurrentIndex(TabNames.STOCK_DETAILS.value)
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
@@ -188,6 +199,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QCheckBox, "negativeTrendsCheck").stateChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QSlider, "stockYieldFilter").valueChanged.connect(self.on_search_changed)
         self.findChild(QtWidgets.QPushButton, "loginButton").clicked.connect(self.on_login_button)
+        self.findChild(QtWidgets.QPushButton, "registerButton").clicked.connect(self.on_register_button)
+        self.findChild(QtWidgets.QPushButton, "registerButton_2").clicked.connect(self.on_register_confirm)
+        self.findChild(QtWidgets.QPushButton, "cancelRegister").clicked.connect(self.on_register_cancel)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
         self.findChild(QtWidgets.QAction, "actionStyleSheet").triggered.connect(lambda: self.load_style_sheet("style.qss"))
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.logout)
@@ -225,6 +239,47 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.mark_invalid_input(confirm_pwd)
 
+    def on_register_confirm(self):
+        username = self.findChild(QtWidgets.QLineEdit, "registerUsername")
+        password = self.findChild(QtWidgets.QLineEdit, "registerPassword")
+        confirm_pwd = self.findChild(QtWidgets.QLineEdit, "registerPasswordConfirm")
+
+        if exists_user(username.text(), self.database) or username.text() == "":
+            self.mark_invalid_input(username)
+            return
+
+        if password.text() == "":
+            self.mark_invalid_input(password)
+            return
+
+        if password.text() != confirm_pwd.text():
+            self.mark_invalid_input(confirm_pwd)
+            return
+
+        create_user(username.text(), password.text(), self.database)
+        user = load_user(username.text(), password.text(), self.database)
+        self.login(user)
+
+        confirm_pwd.setStyleSheet("")
+        password.setStyleSheet("")
+        username.setStyleSheet("")
+        username.setText("")
+        password.setText("")
+        confirm_pwd.setText("")
+        self.set_tab_state(TabNames.REGISTER.value, False)
+        self.findChild(QtWidgets.QTabWidget, "tabWidget").setCurrentIndex(TabNames.USER.value)
+
+    def on_register_button(self):
+        self.set_tab_state(TabNames.REGISTER.value, True)
+        self.set_tab_state(TabNames.LOGIN.value, False)
+
+    def on_register_cancel(self):
+        self.set_tab_state(TabNames.REGISTER.value, False)
+        self.set_tab_state(TabNames.LOGIN.value, True)
+
+        tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
+        tabWidget.setCurrentIndex(TabNames.LOGIN.value)
+
     def on_login_button(self):
 
         username_input = self.findChild(QtWidgets.QLineEdit, "usernameLineEdit")
@@ -234,7 +289,6 @@ class MainWindow(QtWidgets.QMainWindow):
             temp_user = load_user(username_input.text(), password_input.text(), self.database)
             if temp_user is not None:
                 self.login(temp_user)
-                self.current_user = temp_user
             else:
                 self.mark_invalid_input(password_input)
         else:
@@ -248,35 +302,30 @@ class MainWindow(QtWidgets.QMainWindow):
         balance = self.current_user.get_balance_cents()
         self.findChild(QtWidgets.QLabel, "userInfoBalanceValue").setText("{:.2f}€".format(balance))
         self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("Hi, {}".format(user.get_user_name()))
-        self.set_login_tab_state(False)
-        self.set_user_tab_state(True)
-        self.findChild(QtWidgets.QTabWidget, "tabWidget").setCurrentIndex(1)
+        self.set_tab_state(TabNames.LOGIN.value, False)
+        self.set_tab_state(TabNames.USER.value, True)
+        self.set_tab_state(TabNames.PORTFOLIO.value, True)
+        self.findChild(QtWidgets.QTabWidget, "tabWidget").setCurrentIndex(TabNames.USER.value)
         balance = self.findChild(QtWidgets.QLabel, "userInfoBalanceValue")
         balance.setText(user.get_balance_string())
         balance.show()
 
     def logout(self):
         self.current_user = None
-        tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
-        tabWidget.setTabEnabled(0, True)
-        tabWidget.setStyleSheet(tabWidget.styleSheet())
         balance = self.findChild(QtWidgets.QLabel, "userInfoBalanceValue")
         balance.setText("0.00€")
         self.findChild(QtWidgets.QLabel, "welcomeLabel").setText("")
         self.findChild(QtWidgets.QLineEdit, "usernameLineEdit").setText("")
         self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setText("")
-        self.set_user_tab_state(False)
-        self.set_login_tab_state(True)
-        tabWidget.setCurrentIndex(0)
 
-    def set_login_tab_state(self, state):
+        self.set_tab_state(TabNames.USER.value, False)
+        self.set_tab_state(TabNames.LOGIN.value, True)
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
-        tabWidget.setTabEnabled(0, state)
-        tabWidget.setStyleSheet(tabWidget.styleSheet())
+        tabWidget.setCurrentIndex(TabNames.LOGIN.value)
 
-    def set_user_tab_state(self, state):
+    def set_tab_state(self, tab_id, state):
         tabWidget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
-        tabWidget.setTabEnabled(1, state)
+        tabWidget.setTabEnabled(tab_id, state)
         tabWidget.setStyleSheet(tabWidget.styleSheet())
 
     def on_search_changed(self):

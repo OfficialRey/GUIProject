@@ -31,7 +31,7 @@ QTabBar::tab {
     padding: 15px 5px;
 }
 
-QTabBar::tab::hover {
+QTabBar::tab::hover, QTabBar::tab::selected {
     background-color: #4b4b4b;
 }
 
@@ -70,6 +70,38 @@ QLabel[objectName="userInfoPortfolioValue"] {
 
 QPushButton {
     background-color: #3b3b3b;
+}
+
+QPushButton[objectName="loginButton"] {
+    background-color: #1a7000;
+    border-radius: 5px;
+    border: 1px solid #0d3800;
+    padding: 4px;
+    margin-top: 25px;
+}
+
+QPushButton[objectName="loginButton"]::hover {
+    background-color: #1c7a00;
+}
+
+QPushButton[objectName="loginButton"]::pressed {
+    background-color: #176600;
+}
+
+QPushButton[objectName="registerButton"] {
+    background-color: #00459e;
+    border-radius: 5px;
+    border: 1px solid #002554;
+    padding: 4px;
+    margin-top: 5px;
+}
+
+QPushButton[objectName="registerButton"]::hover {
+    background-color: #004cad;
+}
+
+QPushButton[objectName="registerButton"]::pressed {
+    background-color: #003c8a;
 }
 
 QLineEdit {
