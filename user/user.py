@@ -4,6 +4,7 @@ import os.path
 from json import JSONDecodeError
 
 from logs.log import log_message
+from stock_data.stocks import Stonks
 
 DEFAULT_FILE = "users.dat"
 DEFAULT_USER_BALANCE = 1000000
@@ -71,7 +72,7 @@ class Portfolio:
         self.stocks[stock_name] = amount
 
     def buy_stock(self, stock_name: str, stock_price: int, amount: int):
-        self.balance -= (stock_price * amount) // 100
+        self.balance -= (stock_price * amount) * 100
         amount += self.get_holding(stock_name)
         self.stocks[stock_name] = amount
 
@@ -79,6 +80,17 @@ class Portfolio:
         if stock_name in self.stocks:
             return self.stocks[stock_name]
         return 0
+
+    def get_balance(self):
+        return self.balance
+
+    def get_current_value(self, stocks: Stonks):
+        return self.get_current_value_cents(stocks) / 100
+
+    def get_current_value_cents(self, stocks: Stonks):
+        values = [self.stocks[stock_name] * stocks.get_stock(stock_name).get_ask_price_cents() for stock_name in
+                  self.stocks.keys()]
+        return sum(values)
 
 
 def exists_user(user_name: str, database: Database):
@@ -90,7 +102,7 @@ def create_user(user_name: str, password: str, database: Database, balance: int 
     hash_key = generate_hash_key(password)
     user = User(user_name, hash_key, {}, balance, database)
     database.save_user(user)
-    log_message(f"Created user {user} with a balance of {user.get_balance_string()}.")
+    log_message(f"Created user {user.get_user_name()} with a balance of {user.get_balance_string()}")
 
 
 def load_user(user_name: str, password: str, database: Database):
@@ -122,6 +134,9 @@ class User:
 
     def change_password(self, password: str):
         self.hash_key = generate_hash_key(password)
+        self.save_user()
+        log_message(f"Changed password of user {self.get_user_name()}")
+        return True
 
     def get_user_name(self):
         return self.user_name
@@ -135,14 +150,15 @@ class User:
     def get_stocks(self):
         return self.portfolio.stocks
 
-    def get_balance_cents(self) -> int:
-        return self.portfolio.balance
-
     def get_balance_euros(self) -> float:
-        return self.portfolio.balance / 100
+        return self.portfolio.get_balance() / 100
+
+    def get_balance_cents(self) -> int:
+        return self.portfolio.get_balance()
 
     def get_balance_string(self) -> str:
         return "{:.2f}€".format(round(self.get_balance_cents() / 100, 2))
 
     def save_user(self) -> None:
         self.database.save_user(self)
+        log_message(f"Saved user {self.get_user_name()}")

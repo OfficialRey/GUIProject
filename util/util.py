@@ -140,7 +140,6 @@ def post_process_results(results: List[float]):
     for i in range(1, len(results)):
         if results[i] < 0:
             results[i] = results[i - 1]
-    print(results)
     return results
 
 

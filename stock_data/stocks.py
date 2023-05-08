@@ -116,6 +116,9 @@ class Stock:
     def get_ask_price(self):
         return self.meta_data[StockInfoKey.ASK_PRICE]
 
+    def get_ask_price_cents(self):
+        return self.get_ask_price() * 100
+
     def get_ask_size(self):
         return self.meta_data[StockInfoKey.ASK_SIZE]
 
