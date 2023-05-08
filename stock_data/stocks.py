@@ -23,6 +23,7 @@ class TimeInterval(Enum):
 
 
 class StockInfoKey:
+    CURRENT_PRICE = "curPrice"
     ASK_SIZE = "askSize"
     BID_SIZE = "bidSize"
     ASK_PRICE = "ask"
@@ -79,6 +80,8 @@ class Stock:
 
     def create_meta_data(self):
         ticker_info = yfinance.Ticker(self.stock_name).info
+        if ticker_info[StockInfoKey.ASK_PRICE] == 0:
+            ticker_info[StockInfoKey.ASK_PRICE] = self.prices[-1]
         return {
             StockInfoKey.BID_PRICE: get_value(StockInfoKey.BID_PRICE, ticker_info),
             StockInfoKey.BID_SIZE: get_value(StockInfoKey.BID_SIZE, ticker_info),

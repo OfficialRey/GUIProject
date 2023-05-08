@@ -110,7 +110,7 @@ class MainWindow(QtWidgets.QMainWindow):
         target_stock = self.stocks.get_stock(stock_id)
         stock_name.setText(f"<a href={target_stock.get_website()}>{target_stock.get_long_name()} ({stock_id})</a>")
         stock_price = self.findChild(QtWidgets.QLabel, "stockPrice")
-        stock_price.setText(f"{target_stock.get_ask_price()} {target_stock.get_currency()}")
+        stock_price.setText(f"{'%.2f' % target_stock.get_ask_price()} {target_stock.get_currency()}")
         stock_price_diff = self.findChild(QtWidgets.QLabel, "stockPriceDiff")
 
         self.set_detail_graph(target_stock)
