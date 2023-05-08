@@ -104,6 +104,13 @@ QPushButton[objectName="registerButton"]::pressed {
     background-color: #003c8a;
 }
 
+QPushButton[objectName="registerButton_2"],
+QPushButton[objectName="cancelRegister"],
+QPushButton[objectName="buyStockButton"],
+QPushButton[objectName="confirmChangePassword"] {
+    color: #bfbfbf;
+}
+
 QLineEdit {
     background-color: #3b3b3b;
     color: #bfbfbf;
