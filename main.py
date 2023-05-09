@@ -209,13 +209,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 port_folio.buy_stock(self.current_stock.get_name(), self.current_stock.get_ask_price(), amount)
                 self.current_user.save_user()
                 self.update_user_tab()
-                pass
+                message_box = QtWidgets.QMessageBox(
+                    QtWidgets.QMessageBox.Icon.Information, "Success", "Stock added to your portfolio.")
+                message_box.exec()
             else:
-                # TODO: Not enough cash
-                pass
+                message_box = QtWidgets.QMessageBox(
+                    QtWidgets.QMessageBox.Icon.Warning, "Warning", "You don't have enough money. Consider selling some of your stock.")
+                message_box.exec()
         else:
-            # TODO: Not logged in
-            pass
+            message_box = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Icon.Warning, "Warning", "Please log in to use this feature.")
+            message_box.exec()
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
