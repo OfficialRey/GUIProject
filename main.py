@@ -3,6 +3,7 @@ from graph.stock_graph import StockGraph
 from logs.log import log_message
 from stock_data.stocks import Stonks, Stock
 from user.user import User, Database, exists_user, load_user, create_user
+from actions.operation import Operation, OperationList, Action
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
@@ -52,6 +53,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_stock: Stock = None
         self.current_user: User = None
         self.set_stock_details(self.stocks.get_stock_names()[0])
+        self.operation_list = OperationList()
 
         self.database = Database()
 
@@ -209,6 +211,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 port_folio.buy_stock(self.current_stock.get_name(), self.current_stock.get_ask_price(), amount)
                 self.current_user.save_user()
                 self.update_user_tab()
+
+                self.operation_list.do(Operation(Action.BUY_STOCKS, self.current_stock.get_name(), amount))
+
                 message_box = QtWidgets.QMessageBox(
                     QtWidgets.QMessageBox.Icon.Information, "Success", "Stock added to your portfolio.")
                 message_box.exec()
@@ -220,6 +225,36 @@ class MainWindow(QtWidgets.QMainWindow):
             message_box = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Warning, "Warning", "Please log in to use this feature.")
             message_box.exec()
+
+    def undo(self):
+        operation = self.operation_list.undo()
+        if not operation:
+            return
+
+        portfolio = self.current_user.get_portfolio()
+        stock_name = operation.get_stock_name()
+        if operation.get_action == Action.SELL_STOCKS:
+            portfolio.buy_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), operation.get_amount())
+        else:
+            portfolio.sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), operation.get_amount())
+
+        self.current_user.save_user()
+        self.update_user_tab()
+
+    def redo(self):
+        operation = self.operation_list.redo()
+        if not operation:
+            return
+
+        portfolio = self.current_user.get_portfolio()
+        stock_name = operation.get_stock_name()
+        if operation.get_action == Action.SELL_STOCKS:
+            portfolio.sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), operation.get_amount())
+        else:
+            portfolio.buy_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), operation.get_amount())
+
+        self.current_user.save_user()
+        self.update_user_tab()
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
@@ -235,6 +270,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(self.on_exit)
         self.findChild(QtWidgets.QAction, "actionStyleSheet").triggered.connect(
             lambda: self.load_style_sheet("style.qss"))
+        self.findChild(QtWidgets.QAction, "actionUndo").triggered.connect(self.undo)
+        self.findChild(QtWidgets.QAction, "actionRedo").triggered.connect(self.redo)
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
         self.findChild(QtWidgets.QComboBox, "graphPeriodSelection").currentIndexChanged.connect(self.on_period_changed)
@@ -370,6 +407,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def logout(self):
         self.current_user = None
+        self.operation_list.clear()
         self.update_user_tab()
 
     def set_tab_state(self, tab_id, state):

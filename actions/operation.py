@@ -10,27 +10,44 @@ class Action(Enum):
 class Operation:
 
     def __init__(self, action: Action, stock_name: str, amount: int):
-        self.action = action
-        self.stock_name = stock_name
-        self.amount = amount
+        self.__action = action
+        self.__stock_name = stock_name
+        self.__amount = amount
+    
+    def get_action(self) -> Action:
+        return self.__action
+    
+    def get_stock_name(self) -> str:
+        return self.__stock_name
+    
+    def get_amount(self) -> int:
+        return self.__amount
 
 
 class OperationList:
 
     def __init__(self):
-        self.operations = []
-        self.un_done = []
+        self.__operations = []
+        self.__un_done = []
 
     def do(self, operation: Operation):
-        self.un_done = []
-        self.operations.append(operation)
+        self.__un_done = []
+        self.__operations.append(operation)
 
     def undo(self) -> Operation:
-        operation = self.operations.pop()
-        self.un_done.append(operation)
-        return operation
+        if len(self.__operations):
+            operation = self.__operations.pop()
+            self.__un_done.append(operation)
+            return operation
+        return None
 
     def redo(self) -> Operation:
-        operation = self.un_done.pop()
-        self.operations.append(operation)
-        return operation
+        if len(self.__un_done):
+            operation = self.__un_done.pop()
+            self.__operations.append(operation)
+            return operation
+        return None
+
+    def clear(self):
+        self.__operations = []
+        self.__un_done = []
