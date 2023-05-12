@@ -1,5 +1,6 @@
 import sys
-from graph.stock_graph import StockGraph
+
+from graph.stock_graph import StockPredictionGraph, StockGraph
 from logs.log import log_message
 from stock_data.stocks import Stonks, Stock
 from user.user import User, Database, exists_user, load_user, create_user
@@ -30,6 +31,7 @@ class TabNames(Enum):
 
 
 period_days = {
+    "-": 0,
     "7 days": 7,
     "1 month": 30,
     "3 months": 90,
@@ -91,14 +93,17 @@ class MainWindow(QtWidgets.QMainWindow):
         log_message("Started loading stock details")
 
     def on_period_changed(self):
-        current_stock = self.findChild(QtWidgets.QLabel, "stockName").text()
-        stock_id = findall("(\w+.DE)", current_stock)[-1]
-        self.set_detail_graph(self.stocks.get_stock(stock_id))
+        self.set_detail_graph(self.current_stock)
+
+    def on_prediction_period_changed(self):
+        self.set_detail_graph(self.current_stock)
 
     def set_detail_graph(self, stock):
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
         period_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPeriodSelection")
+        predict_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPredictionSelection")
         period = period_days[period_selection.currentText()]
+        predict_period = period_days[predict_selection.currentText()]
         layout = stock_graph.layout()
         if layout is not None:
             # Clear layout
@@ -107,7 +112,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             layout = QtWidgets.QHBoxLayout()
             stock_graph.setLayout(layout)
-        graph = StockGraph(stock.get_time_stamps(period), stock.get_prices(period))
+        graph = StockPredictionGraph(stock.get_time_stamps(period), stock.get_prices(period),
+                                     stock.get_prediction(predict_period))
         layout.addWidget(graph.get_widget())
 
     def set_stock_details(self, stock_id):
@@ -219,7 +225,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 message_box.exec()
             else:
                 message_box = QtWidgets.QMessageBox(
-                    QtWidgets.QMessageBox.Icon.Warning, "Warning", "You don't have enough money. Consider selling some of your stock.")
+                    QtWidgets.QMessageBox.Icon.Warning, "Warning",
+                    "You don't have enough money. Consider selling some of your stock.")
                 message_box.exec()
         else:
             message_box = QtWidgets.QMessageBox(
@@ -275,6 +282,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QPushButton, "logoutButton").clicked.connect(self.logout)
         self.findChild(QtWidgets.QPushButton, "confirmChangePassword").clicked.connect(self.change_password)
         self.findChild(QtWidgets.QComboBox, "graphPeriodSelection").currentIndexChanged.connect(self.on_period_changed)
+        self.findChild(QtWidgets.QComboBox, "graphPredictionSelection").currentIndexChanged.connect(
+            self.on_prediction_period_changed)
         self.findChild(QtWidgets.QPushButton, "buyStockButton").clicked.connect(self.buy_stock)
 
     def set_page_button_state(self, state: bool):

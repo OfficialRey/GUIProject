@@ -148,3 +148,9 @@ def sanitize_file_name(file_name: str):
         file_name = file_name.replace(character, '')
 
     return file_name
+
+
+def expand_time_stamps(time_stamps: List[numpy.datetime64], period: int):
+    for i in range(period):
+        numpy.append(time_stamps, add_time_stamp(pd.Timestamp(time_stamps[-1]), day=1).to_numpy())
+    return time_stamps

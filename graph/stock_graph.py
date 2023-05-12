@@ -4,7 +4,7 @@ import numpy
 import pandas as pd
 import pyqtgraph
 
-from util.util import time_stamp_to_string
+from util.util import time_stamp_to_string, expand_time_stamps
 
 
 def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
@@ -34,6 +34,49 @@ class StockGraph:
         x_content = create_axis_ticks(x)
         axis.setTicks([x_content.items()])
         self.graph.plot(list(x_content.keys()), y)
+
+    def get_widget(self):
+        return self.graph
+
+
+class StockPredictionGraph:
+
+    def __init__(self, history_x: List[numpy.datetime64], history_y: List[float], prediction_y: List[float]):
+        self.graph = pyqtgraph.PlotWidget()
+        self.graph.setBackground(background='white')
+
+        # Calculate prediction values
+        prediction_length = len(prediction_y)
+        prediction_x = []
+        ticks = list(history_x)
+        if prediction_length > 0:
+            prediction_x: List[numpy.datetime64] = expand_time_stamps(history_x, prediction_length)
+            prediction_x = list(prediction_x)[-prediction_length:]
+            prediction_y = pd.Series(prediction_y, index=prediction_x)
+            ticks.extend(prediction_x)
+
+        axis = self.graph.getAxis('bottom')
+        x_content = create_axis_ticks(ticks)
+        axis.setTicks([x_content.items()])
+
+        # Compare lists
+        duplicates = 0
+        for history, prediction in zip(history_x, prediction_x):
+            if history == prediction:
+                duplicates += 1
+
+        # TODO: Fix date mismatches
+        print(f"Duplicates: {duplicates}")
+
+        print(f" {len(ticks)}")
+        print(f"-{len(history_x)}")
+        print("-------------------")
+        print(f" {len(prediction_x)}")
+        print(f" {(len(ticks) - len(history_x))}")
+
+        self.graph.plot(history_x, history_y, c='black')
+        if prediction_length > 0:
+            self.graph.plot(prediction_x, prediction_y, c='red')
 
     def get_widget(self):
         return self.graph

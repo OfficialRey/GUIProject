@@ -5,6 +5,7 @@ import numpy
 import pandas as pd
 import yfinance
 
+from prediction.stock_prediction import StockPrediction
 from util.util import get_value, download_stock_names, download_stock_data, fill_data, \
     calculate_stock_trend
 
@@ -67,6 +68,7 @@ class Period(Enum):
 
 
 class Stock:
+    prediction_algorithm: StockPrediction = None
 
     def __init__(self, data_frame: pd.DataFrame, stock_name: str):
         self.stock_name = stock_name
@@ -167,6 +169,13 @@ class Stock:
         if period == -1:
             return self.time_stamps
         return self.time_stamps[-period:]
+
+    def get_prediction(self, period: int):
+        # TODO: Cache results
+        if self.prediction_algorithm is None:
+            self.prediction_algorithm = StockPrediction(self, threading=True)
+            return []
+        return self.prediction_algorithm.predict_future_stock_prices(period)
 
 
 class Stonks:
