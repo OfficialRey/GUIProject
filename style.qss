@@ -183,3 +183,15 @@ QSpinBox {
     background-color: #3b3b3b;
     color: #bfbfbf;
 }
+
+QListWidget {
+    background-color: #3b3b3b;
+}
+
+QListWidget::item {
+    color: #cfcfcf;
+}
+
+QListWidget::item::selected {
+    background-color: #505050;
+}
