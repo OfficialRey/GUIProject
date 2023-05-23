@@ -98,7 +98,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_prediction_period_changed(self):
         self.set_detail_graph(self.current_stock)
 
+    def get_selected_compare_stocks(self) -> list[str]:
+        compare_options: QtWidgets.QListWidget = self.findChild(QtWidgets.QListWidget, "compareOptions")
+        return [
+            compare_options.item(x).text() for x in range(compare_options.count()) if compare_options.item(x).checkState()
+        ]
+
     def set_detail_graph(self, stock):
+        # TODO: get list of compare graphs
+        compare_graphs = self.get_selected_compare_stocks()
+        log_message(str(compare_graphs))
+
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
         period_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPeriodSelection")
         predict_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPredictionSelection")
@@ -138,6 +148,12 @@ class MainWindow(QtWidgets.QMainWindow):
             f"Dividend: {round(self.current_stock.get_dividend_yield() * 100, 2)}%")
         self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(
             f"Dividend: {self.current_stock.get_dividend_rate()} {self.current_stock.get_currency()}")
+        
+        compare_options: QtWidgets.QListWidget = self.findChild(QtWidgets.QListWidget, "compareOptions")
+        for stock in self.stocks.get_stock_names():
+            item: QtWidgets.QListWidgetItem = QtWidgets.QListWidgetItem(stock, compare_options)
+            item.setCheckState(False)
+            compare_options.addItem(item)
 
     def init_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -285,6 +301,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QComboBox, "graphPredictionSelection").currentIndexChanged.connect(
             self.on_prediction_period_changed)
         self.findChild(QtWidgets.QPushButton, "buyStockButton").clicked.connect(self.buy_stock)
+        self.findChild(QtWidgets.QListWidget, "compareOptions").itemChanged.connect(
+            lambda: self.set_detail_graph(self.current_stock))
 
     def set_page_button_state(self, state: bool):
         prev = self.findChild(QtWidgets.QPushButton, "stockTablePrevPage")
