@@ -80,6 +80,8 @@ class StockPrediction:
         if self.model is not None:
             results = []
             current_period = self.x[-1]  # Get last period
+            print(current_period)
+            # TODO: WHY THE FUCK DOES THIS PRINT [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
 
             for i in range(period):
                 # Use own prediction for next period
