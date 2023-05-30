@@ -1340,7 +1340,7 @@
             <item>
              <widget class="QLabel" name="predictedValueLabel">
               <property name="text">
-               <string>Predicted Value</string>
+               <string>Predicted Value (12 mo)</string>
               </property>
              </widget>
             </item>

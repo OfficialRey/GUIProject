@@ -91,6 +91,16 @@ class Portfolio:
         values = [self.stocks[stock_name] * stocks.get_stock(stock_name).get_ask_price_cents() for stock_name in
                   self.stocks.keys()]
         return sum(values)
+    
+    def get_predicted_value(self, stocks: Stonks):
+        return self.get_predicted_value_cents(stocks) / 100
+
+    def get_predicted_value_cents(self, stocks: Stonks):
+        total_predicted_value = 0
+        for stock_name in self.stocks.keys():
+            print(stock_name, ":", stocks.get_stock(stock_name).get_prediction(365))
+            # total_predicted_value += stocks.get_stock(stock_name).get_prediction(365)[-1] * self.stocks[stock_name]
+        return total_predicted_value
 
 
 def exists_user(user_name: str, database: Database):

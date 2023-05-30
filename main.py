@@ -126,6 +126,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                      stock.get_prediction(predict_period))
         layout.addWidget(graph.get_widget())
 
+    def update_portfolio(self):
+        total_value = str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)) + "€"
+        self.findChild(QtWidgets.QLabel, "totalValue").setText(total_value)
+        predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
+
     def set_stock_details(self, stock_id):
         self.current_stock = self.stocks.get_stock(stock_id)
         stock_name = self.findChild(QtWidgets.QLabel, "stockName")
@@ -233,6 +238,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 port_folio.buy_stock(self.current_stock.get_name(), self.current_stock.get_ask_price(), amount)
                 self.current_user.save_user()
                 self.update_user_tab()
+                self.update_portfolio()
 
                 self.operation_list.do(Operation(Action.BUY_STOCKS, self.current_stock.get_name(), amount))
 
@@ -263,6 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.current_user.save_user()
         self.update_user_tab()
+        self.update_portfolio()
 
     def redo(self):
         operation = self.operation_list.redo()
@@ -278,6 +285,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.current_user.save_user()
         self.update_user_tab()
+        self.update_portfolio()
 
     def add_functions(self):
         self.findChild(QtWidgets.QLineEdit, "stockNameSearch").textChanged.connect(self.on_search_changed)
@@ -431,6 +439,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QLineEdit, "usernameLineEdit").setText("")
         self.findChild(QtWidgets.QLineEdit, "passwordLineEdit").setText("")
         self.update_user_tab()
+        self.update_portfolio()
 
     def logout(self):
         self.current_user = None
