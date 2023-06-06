@@ -46,12 +46,12 @@ class StockPredictionGraph:
         self.graph.setBackground(background='white')
 
         # Calculate prediction values
-        prediction_length = len(prediction_y)
-        prediction_x = []
         ticks = list(history_x)
-        if prediction_length > 0:
-            prediction_x: List[numpy.datetime64] = expand_time_stamps(history_x, prediction_length)
-            prediction_x = list(prediction_x)[-prediction_length:]
+        prediction_x = []
+        if len(prediction_y) > 0:
+            prediction_x: List[numpy.datetime64] = expand_time_stamps(history_x, len(prediction_y))
+            prediction_x = list(prediction_x)[-(len(prediction_y) + 1):]
+            prediction_y.insert(0, history_y[-1])
             prediction_y = pd.Series(prediction_y, index=prediction_x)
             ticks.extend(prediction_x)
 
@@ -59,24 +59,9 @@ class StockPredictionGraph:
         x_content = create_axis_ticks(ticks)
         axis.setTicks([x_content.items()])
 
-        # Compare lists
-        duplicates = 0
-        for history, prediction in zip(history_x, prediction_x):
-            if history == prediction:
-                duplicates += 1
-
-        # TODO: Fix date mismatches
-        print(f"Duplicates: {duplicates}")
-
-        print(f" {len(ticks)}")
-        print(f"-{len(history_x)}")
-        print("-------------------")
-        print(f" {len(prediction_x)}")
-        print(f" {(len(ticks) - len(history_x))}")
-
-        self.graph.plot(history_x, history_y, c='black')
-        if prediction_length > 0:
-            self.graph.plot(prediction_x, prediction_y, c='red')
+        self.graph.plot(history_x, history_y, pen=pyqtgraph.mkPen('black'))
+        if len(prediction_y) > 0:
+            self.graph.plot(prediction_x, prediction_y, pen=pyqtgraph.mkPen('red'))
 
     def get_widget(self):
         return self.graph

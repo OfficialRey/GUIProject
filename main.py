@@ -107,7 +107,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_detail_graph(self, stock):
         # TODO: get list of compare graphs
         compare_graphs = self.get_selected_compare_stocks()
-        log_message(str(compare_graphs))
 
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
         period_selection: QtWidgets.QComboBox = self.findChild(QtWidgets.QComboBox, "graphPeriodSelection")
@@ -310,7 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QComboBox, "graphPredictionSelection").currentIndexChanged.connect(
             self.on_prediction_period_changed)
         self.findChild(QtWidgets.QPushButton, "buyStockButton").clicked.connect(self.buy_stock)
-        self.findChild(QtWidgets.QListWidget, "compareOptions").itemChanged.connect(
+        self.findChild(QtWidgets.QListWidget, "compareOptions").itemClicked.connect(
             lambda: self.set_detail_graph(self.current_stock))
 
     def set_page_button_state(self, state: bool):
@@ -382,7 +381,6 @@ class MainWindow(QtWidgets.QMainWindow):
         tabWidget.setCurrentIndex(TabNames.LOGIN.value)
 
     def on_login_button(self):
-
         username_input = self.findChild(QtWidgets.QLineEdit, "usernameLineEdit")
         password_input = self.findChild(QtWidgets.QLineEdit, "passwordLineEdit")
 
