@@ -9,6 +9,7 @@ from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
 from re import findall
+import time
 
 
 class StockTableColumn(Enum):
@@ -129,6 +130,38 @@ class MainWindow(QtWidgets.QMainWindow):
         total_value = str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)) + "€"
         self.findChild(QtWidgets.QLabel, "totalValue").setText(total_value)
         predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
+        self.findChild(QtWidgets.QLabel, "predictedValue").setText(predicted_value)
+
+        portfolio_stocks = self.current_user.get_portfolio().get_stocks()
+
+        table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "portfolioDetailsTable")
+        table.setRowCount(0)
+
+        row = 0
+        for stock_name in portfolio_stocks.keys():
+            table.insertRow(row)
+
+            stonk = self.stocks.get_stock(stock_name)
+            current_value = stonk.get_ask_price()
+            predicted_value = stonk.get_prediction(365)[-1]
+            print(f"predicted {stock_name} as {predicted_value}")
+            profit = predicted_value / current_value * 100
+            if profit < 100:
+                profit = str((100 - profit) * -1)
+            else:
+                profit = "+" + str(profit - 100)
+
+            self.set_table_cell_data(row, 1, stock_name, table)
+            self.set_table_cell_data(row, 2, stonk.get_long_name(), table)
+            self.set_table_cell_data(row, 3, self.current_user.get_portfolio().get_holding(stock_name), table)
+            self.set_table_cell_data(row, 4, predicted_value, table)
+            self.set_table_cell_data(row, 5, current_value, table)
+            self.set_table_cell_data(row, 6, profit, table)
+
+            sell_button = QtWidgets.QPushButton("Sell")
+            sell_button.clicked.connect(lambda: self.sell_stock(stock_name))
+            table.setCellWidget(row, 0, sell_button)
+            row += 1
 
     def set_stock_details(self, stock_id):
         self.current_stock = self.stocks.get_stock(stock_id)
@@ -202,12 +235,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.on_search_changed()
 
-    def set_table_cell_data(self, row, col, value):
-        stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
-        item = stock_table.item(row, col)
+    def set_table_cell_data(self, row, col, value, widget: QtWidgets.QTableWidget=None):
+        if not widget:
+            widget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
+        item = widget.item(row, col)
         if not item:
             item = QtWidgets.QTableWidgetItem()
-            stock_table.setItem(row, col, item)
+            widget.setItem(row, col, item)
         item.setData(QtCore.Qt.ItemDataRole.DisplayRole, value)
 
     def get_table_cell_data(self, row, col):
@@ -226,6 +260,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tab_widget.setCurrentIndex(TabNames.STOCK_DETAILS.value)
+
+    def sell_stock(self, stock_name):
+        if not self.current_user:
+            return
+        
+        self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), 1)
+        self.update_portfolio()
+        self.update_user_tab()
+        self.current_user.save_user()
 
     def buy_stock(self):
         if self.current_user is not None:
@@ -469,7 +512,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         for i in range(stock_table.rowCount()):
-            name = self.get_table_cell_data(i, StockTableColumn.NAME.value)
+            name = str(self.get_table_cell_data(i, StockTableColumn.NAME.value))
             price = self.get_table_cell_data(i, StockTableColumn.PRICE.value)
             diff = self.get_table_cell_data(i, StockTableColumn.DIFF.value)
             stock_yield = self.get_table_cell_data(i, StockTableColumn.YIELD.value)

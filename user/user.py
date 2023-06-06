@@ -1,6 +1,7 @@
 import json
 import hashlib
 import os.path
+import time
 from json import JSONDecodeError
 
 from logs.log import log_message
@@ -69,7 +70,10 @@ class Portfolio:
     def sell_stock(self, stock_name: str, stock_price: int, amount: int):
         self.balance += (stock_price * amount) // 100
         amount = self.get_holding(stock_name) - amount
-        self.stocks[stock_name] = amount
+        if amount > 0:
+            self.stocks[stock_name] = amount
+        else:
+            del self.stocks[stock_name]
 
     def buy_stock(self, stock_name: str, stock_price: int, amount: int):
         self.balance -= (stock_price * amount) * 100
@@ -80,6 +84,9 @@ class Portfolio:
         if stock_name in self.stocks:
             return self.stocks[stock_name]
         return 0
+
+    def get_stocks(self):
+        return self.stocks
 
     def get_balance(self):
         return self.balance
@@ -98,8 +105,10 @@ class Portfolio:
     def get_predicted_value_cents(self, stocks: Stonks):
         total_predicted_value = 0
         for stock_name in self.stocks.keys():
-            print(stock_name, ":", stocks.get_stock(stock_name).get_prediction(365))
-            # total_predicted_value += stocks.get_stock(stock_name).get_prediction(365)[-1] * self.stocks[stock_name]
+            stocks.get_stock(stock_name).get_prediction(28)  # inits model (in thread)
+            time.sleep(0.5)
+            prediction = stocks.get_stock(stock_name).get_prediction(365)
+            total_predicted_value += prediction[-1] * self.stocks[stock_name]
         return total_predicted_value
 
 
