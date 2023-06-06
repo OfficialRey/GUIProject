@@ -154,6 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(
             f"Dividend: {self.current_stock.get_dividend_rate()} {self.current_stock.get_currency()}")
         
+        # TODO: init in constructor, reset to unchecked here
         compare_options: QtWidgets.QListWidget = self.findChild(QtWidgets.QListWidget, "compareOptions")
         for stock in self.stocks.get_stock_names():
             item: QtWidgets.QListWidgetItem = QtWidgets.QListWidgetItem(stock, compare_options)
