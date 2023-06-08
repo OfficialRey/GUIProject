@@ -66,6 +66,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_tab_state(TabNames.PORTFOLIO.value, False)
         self.add_functions()
         self.init_stock_table()
+        self.init_compare_options()
         self.set_icons()
 
         self.update_user_tab()
@@ -75,6 +76,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def load_style_sheet(self, filename):
         with open(filename, "r") as f:
             self.setStyleSheet(f.read().strip())
+
+    def init_compare_options(self):
+        compare_options: QtWidgets.QListWidget = self.findChild(QtWidgets.QListWidget, "compareOptions")
+        for stock in self.stocks.get_stock_names():
+            item: QtWidgets.QListWidgetItem = QtWidgets.QListWidgetItem(stock, compare_options)
+            item.setCheckState(False)
+            compare_options.addItem(item)
 
     def start_stock_loader_thread(self):
         self.loader_thread = QtCore.QThread()
@@ -186,12 +194,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findChild(QtWidgets.QLabel, "stockDividendYield").setText(
             f"Dividend: {self.current_stock.get_dividend_rate()} {self.current_stock.get_currency()}")
         
-        # TODO: init in constructor, reset to unchecked here
         compare_options: QtWidgets.QListWidget = self.findChild(QtWidgets.QListWidget, "compareOptions")
-        for stock in self.stocks.get_stock_names():
-            item: QtWidgets.QListWidgetItem = QtWidgets.QListWidgetItem(stock, compare_options)
-            item.setCheckState(False)
-            compare_options.addItem(item)
+        for x in range(compare_options.count() - 1):
+            compare_options.item(x).setCheckState(False)
 
     def init_stock_table(self):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
