@@ -23,6 +23,7 @@ def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
 
 
 COLORS = ["red", "blue"]
+COMPARE_COLORS = ["green", "blue", "cyan", "magenta", "yellow", "gray", "darkRed", "darkGreen", "darkBlue", "darkCyan", "darkMagenta", "darkGray", "lightGray"]
 
 
 class StockGraph:
@@ -41,7 +42,7 @@ class StockGraph:
 
 class StockPredictionGraph:
 
-    def __init__(self, history_x: List[numpy.datetime64], history_y: List[float], prediction_y: List[float]):
+    def __init__(self, history_x: List[numpy.datetime64], history_y: List[float], prediction_y: List[float], compare_x: List[List[numpy.datetime64]]=[], compare_y: List[List[float]]=[]):
         self.graph = pyqtgraph.PlotWidget()
         self.graph.setBackground(background='white')
 
@@ -60,6 +61,8 @@ class StockPredictionGraph:
         axis.setTicks([x_content.items()])
 
         self.graph.plot(history_x, history_y, pen=pyqtgraph.mkPen('black'))
+        for i in range(min(len(compare_x) - 1, len(COMPARE_COLORS) - 1)):
+            self.graph.plot(compare_x[i], compare_y[i], pen=pyqtgraph.mkPen(COMPARE_COLORS[i]))
         if len(prediction_y) > 0:
             self.graph.plot(prediction_x, prediction_y, pen=pyqtgraph.mkPen('red'))
 

@@ -130,8 +130,16 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             layout = QtWidgets.QHBoxLayout()
             stock_graph.setLayout(layout)
+
+        compare_x = []
+        compare_y = []
+        for stock_name in compare_graphs:
+            stock = self.stocks.get_stock(stock_name)
+            compare_x.append(stock.get_time_stamps(period))
+            compare_y.append(stock.get_prices(period))
+
         graph = StockPredictionGraph(stock.get_time_stamps(period), stock.get_prices(period),
-                                     stock.get_prediction(predict_period))
+                                     stock.get_prediction(predict_period), compare_x, compare_y)
         layout.addWidget(graph.get_widget())
 
     def update_portfolio(self):
