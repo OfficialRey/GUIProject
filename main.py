@@ -145,7 +145,7 @@ class MainWindow(QtWidgets.QMainWindow):
             current_value = stonk.get_ask_price()
             predicted_value = stonk.get_prediction(365)[-1]
             print(f"predicted {stock_name} as {predicted_value}")
-            profit = predicted_value / current_value * 100
+            profit = round(predicted_value / current_value * 100, 2)
             if profit < 100:
                 profit = str((100 - profit) * -1)
             else:
@@ -159,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_table_cell_data(row, 6, profit, table)
 
             sell_button = QtWidgets.QPushButton("Sell")
-            sell_button.clicked.connect(lambda: self.sell_stock(stock_name))
+            sell_button.clicked.connect(self.sell_stock)
             table.setCellWidget(row, 0, sell_button)
             row += 1
 
@@ -261,9 +261,13 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
         tab_widget.setCurrentIndex(TabNames.STOCK_DETAILS.value)
 
-    def sell_stock(self, stock_name):
+    def sell_stock(self):
         if not self.current_user:
             return
+
+        table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "portfolioDetailsTable")
+        row = table.currentRow()
+        stock_name = table.item(row, 1).data(QtCore.Qt.ItemDataRole.DisplayRole)
         
         self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), 1)
         self.update_portfolio()
