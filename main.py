@@ -114,7 +114,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ]
 
     def set_detail_graph(self, stock):
-        # TODO: get list of compare graphs
         compare_graphs = self.get_selected_compare_stocks()
 
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
@@ -145,8 +144,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_portfolio(self):
         total_value = str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)) + "€"
         self.findChild(QtWidgets.QLabel, "totalValue").setText(total_value)
-        predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
-        self.findChild(QtWidgets.QLabel, "predictedValue").setText(predicted_value)
+        total_predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
+        self.findChild(QtWidgets.QLabel, "predictedValue").setText(total_predicted_value)
 
         portfolio_stocks = self.current_user.get_portfolio().get_stocks()
 
@@ -167,12 +166,13 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 profit = "+" + str(profit - 100)
 
-            self.set_table_cell_data(row, 1, stock_name, table)
-            self.set_table_cell_data(row, 2, stonk.get_long_name(), table)
-            self.set_table_cell_data(row, 3, self.current_user.get_portfolio().get_holding(stock_name), table)
-            self.set_table_cell_data(row, 4, predicted_value, table)
+            self.set_table_cell_data(row, 1, 1, table, editable=True)
+            self.set_table_cell_data(row, 2, stock_name, table)
+            self.set_table_cell_data(row, 3, stonk.get_long_name(), table)
+            self.set_table_cell_data(row, 4, self.current_user.get_portfolio().get_holding(stock_name), table)
             self.set_table_cell_data(row, 5, current_value, table)
-            self.set_table_cell_data(row, 6, profit, table)
+            self.set_table_cell_data(row, 6, str(round(predicted_value, 2)), table)
+            self.set_table_cell_data(row, 7, profit, table)
 
             sell_button = QtWidgets.QPushButton("Sell")
             sell_button.clicked.connect(self.sell_stock)
@@ -248,7 +248,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.on_search_changed()
 
-    def set_table_cell_data(self, row, col, value, widget: QtWidgets.QTableWidget=None):
+    def set_table_cell_data(self, row, col, value, widget: QtWidgets.QTableWidget=None, editable=False):
         if not widget:
             widget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         item = widget.item(row, col)
@@ -256,6 +256,8 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QTableWidgetItem()
             widget.setItem(row, col, item)
         item.setData(QtCore.Qt.ItemDataRole.DisplayRole, value)
+        if not editable:
+            item.setFlags(QtCore.Qt.ItemIsEnabled)
 
     def get_table_cell_data(self, row, col):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -280,9 +282,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "portfolioDetailsTable")
         row = table.currentRow()
-        stock_name = table.item(row, 1).data(QtCore.Qt.ItemDataRole.DisplayRole)
+        stock_name = table.item(row, 2).data(QtCore.Qt.ItemDataRole.DisplayRole)
+        sell_amount = table.item(row, 1).data(QtCore.Qt.ItemDataRole.DisplayRole)
         
-        self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), 1)
+        self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), sell_amount)
         self.update_portfolio()
         self.update_user_tab()
         self.current_user.save_user()

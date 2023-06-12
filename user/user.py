@@ -108,7 +108,7 @@ class Portfolio:
             stocks.get_stock(stock_name).get_prediction(28)  # inits model (in thread)
             time.sleep(0.5)
             prediction = stocks.get_stock(stock_name).get_prediction(365)
-            total_predicted_value += prediction[-1] * self.stocks[stock_name]
+            total_predicted_value += prediction[-1] * self.stocks[stock_name] * 100
         return total_predicted_value
 
 

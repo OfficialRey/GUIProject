@@ -1381,6 +1381,11 @@
             </column>
             <column>
              <property name="text">
+              <string>Sell Amount</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
               <string>Stock ID</string>
              </property>
             </column>
@@ -1396,12 +1401,12 @@
             </column>
             <column>
              <property name="text">
-              <string>Predicted Price</string>
+              <string>Current Price</string>
              </property>
             </column>
             <column>
              <property name="text">
-              <string>Current Price</string>
+              <string>Predicted Price</string>
              </property>
             </column>
             <column>
