@@ -92,7 +92,7 @@ class StockPrediction:
             for i in range(period):
                 # Use own prediction for next period
                 result = self._predict(current_period)
-                print(result)
+                # print(result)
                 results.append(result)
                 current_period.pop(0)
                 current_period.append(result)
