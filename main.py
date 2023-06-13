@@ -9,7 +9,7 @@ from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
 from re import findall
-import time
+from math import isnan
 
 
 class StockTableColumn(Enum):
@@ -154,18 +154,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
         row = 0
         for stock_name in portfolio_stocks.keys():
-            table.insertRow(row)
-
             stonk = self.stocks.get_stock(stock_name)
             current_value = stonk.get_ask_price()
             predicted_value = stonk.get_prediction(365)[-1]
-            print(f"predicted {stock_name} as {predicted_value}")
+            if isnan(predicted_value):
+                log_message("prediction error: nan")
+                continue
+            log_message(f"predicted {stock_name} as {predicted_value} in 12 months")
             profit = round(predicted_value / current_value * 100, 2)
             if profit < 100:
                 profit = str((100 - profit) * -1)
             else:
                 profit = "+" + str(profit - 100)
 
+            table.insertRow(row)
             self.set_table_cell_data(row, 1, 1, table, editable=True)
             self.set_table_cell_data(row, 2, stock_name, table)
             self.set_table_cell_data(row, 3, stonk.get_long_name(), table)
