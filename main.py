@@ -471,11 +471,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_tab_state(TabNames.USER.value, True)
             self.set_tab_state(TabNames.PORTFOLIO.value, True)
 
-            user_balance = self.current_user.get_balance_euros()
+            user_balance = round(self.current_user.get_balance_euros(), 2)
 
             welcome_label.setText("Hi, {}".format(self.current_user.get_user_name()))
             balance_value.setText(str(user_balance))
-            portfolio_value.setText(str(self.current_user.get_portfolio().get_current_value(self.stocks)))
+            portfolio_value.setText(str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)))
 
             balance_value.show()
             balance_label.show()
