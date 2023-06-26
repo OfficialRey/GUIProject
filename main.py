@@ -114,7 +114,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ]
 
     def set_detail_graph(self, stock):
-        # TODO: get list of compare graphs
         compare_graphs = self.get_selected_compare_stocks()
 
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
@@ -160,7 +159,6 @@ class MainWindow(QtWidgets.QMainWindow):
             stonk = self.stocks.get_stock(stock_name)
             current_value = stonk.get_ask_price()
             predicted_value = stonk.get_prediction(365)[-1]
-            print(f"predicted {stock_name} as {predicted_value}")
             profit = round(predicted_value / current_value * 100, 2)
             if profit < 100:
                 profit = str((100 - profit) * -1)

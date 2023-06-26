@@ -23,7 +23,8 @@ def create_axis_ticks(time_stamps: List[numpy.datetime64]) -> dict:
 
 
 COLORS = ["red", "blue"]
-COMPARE_COLORS = ["green", "blue", "cyan", "magenta", "yellow", "gray", "darkRed", "darkGreen", "darkBlue", "darkCyan", "darkMagenta", "darkGray", "lightGray"]
+COMPARE_COLORS = ["green", "blue", "cyan", "magenta", "yellow", "gray", "darkRed", "darkGreen", "darkBlue", "darkCyan",
+                  "darkMagenta", "darkGray", "lightGray"]
 
 
 class StockGraph:
@@ -42,7 +43,14 @@ class StockGraph:
 
 class StockPredictionGraph:
 
-    def __init__(self, history_x: List[numpy.datetime64], history_y: List[float], prediction_y: List[float], compare_x: List[List[numpy.datetime64]]=[], compare_y: List[List[float]]=[]):
+    def __init__(self, history_x: List[numpy.datetime64], history_y: List[float], prediction_y: List[float],
+                 compare_x=None, compare_y=None):
+
+        if compare_y is None:
+            compare_y = []
+        if compare_x is None:
+            compare_x = []
+
         self.graph = pyqtgraph.PlotWidget()
         self.graph.setBackground(background='white')
 
@@ -68,20 +76,3 @@ class StockPredictionGraph:
 
     def get_widget(self):
         return self.graph
-
-
-class CompareGraph:
-
-    def __init__(self, x: List[List[numpy.datetime64]], y: List[List[float]]):
-        self.graph = pyqtgraph.PlotWidget()
-        self.x = x
-        self.y = y
-
-    def plot_graph(self):
-        pass
-
-    def show_graph(self, index: int):
-        pass
-
-    def hide_graph(self, index: int):
-        pass

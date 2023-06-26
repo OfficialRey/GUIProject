@@ -9,7 +9,7 @@ from prediction.stock_prediction import StockPrediction
 from util.util import get_value, download_stock_names, download_stock_data, fill_data, \
     calculate_stock_trend
 
-TICKER_LIST_URL = "https://www.cboe.com/us/equities/market_statistics/listed_symbols/csv"
+# DEPRECATED TICKER_LIST_URL = "https://www.cboe.com/us/equities/market_statistics/listed_symbols/csv"
 TARGET_INDEX = "Close"
 
 MONTHS_IN_YEAR = 12
@@ -171,7 +171,6 @@ class Stock:
         return self.time_stamps[-period:]
 
     def get_prediction(self, period: int):
-        # TODO: Cache results
         if self.prediction_algorithm is None:
             self.prediction_algorithm = StockPrediction(self, threading=True)
             return []
@@ -181,7 +180,7 @@ class Stock:
 class Stonks:
 
     def __init__(self, stock_names=None):
-        self.stock_names = download_stock_names(TICKER_LIST_URL) if stock_names is None else stock_names
+        self.stock_names = download_stock_names() if stock_names is None else stock_names
         self.stock_data = download_stock_data(self.stock_names, Period.TEN_YEARS.value)
         self.stocks: dict = {}
 

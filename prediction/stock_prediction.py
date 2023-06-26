@@ -3,14 +3,12 @@ from typing import List, Union
 from threading import Thread
 
 import numpy as np
-import pandas as pd
 from keras import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-from keras.saving.saving_api import load_model
 
 from prediction.data import get_training_data
-from util.util import post_process_results, sanitize_file_name
+from util.util import post_process_results
 
 
 class StockPrediction:
@@ -47,13 +45,13 @@ class StockPrediction:
         # Very big network to deny pattern creation
         self.model = Sequential([
             Dense(self.period),
-            Dense(1024, activation='relu'),
-            Dense(512, activation='tanh'),
-            Dense(256, activation='relu'),
-            Dense(64, activation='tanh'),
-            Dense(32, activation='relu'),
-            Dense(16, activation='tanh'),
-            Dense(1)  # No activation function to avoid limiting freedom of the network
+            Dense(128, activation='tanh'),
+            #Dense(512, activation='tanh'),
+            #Dense(256, activation='tanh'),
+            #Dense(64, activation='tanh'),
+            #Dense(32, activation='tanh'),
+            #Dense(16, activation='tanh'),
+            Dense(1, activation='relu')  # Stock prices cannot be negative
         ])
 
         self.model.compile(
@@ -72,7 +70,7 @@ class StockPrediction:
             y = self.y
 
         if self.model is not None:
-            # Only short training time to deny patterns and allow creativity and freedom for the network
+            # Only short training time to deny patterns and to allow creativity and freedom to the network
             self.model.fit(x, y, epochs=10, verbose=verbose)
 
     def _cache_results(self, results: List[float]):
@@ -92,7 +90,6 @@ class StockPrediction:
             for i in range(period):
                 # Use own prediction for next period
                 result = self._predict(current_period)
-                print(result)
                 results.append(result)
                 current_period.pop(0)
                 current_period.append(result)

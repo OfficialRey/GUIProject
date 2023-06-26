@@ -1191,21 +1191,6 @@
                 <string>1 year</string>
                </property>
               </item>
-              <item>
-               <property name="text">
-                <string>2 years</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>5 years</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>10 years</string>
-               </property>
-              </item>
              </widget>
             </item>
             <item>

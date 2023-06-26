@@ -31,21 +31,12 @@ def get_next_day(date: pd.Timestamp):
     return pd.Timestamp(second=date.second, minute=date.minute, hour=date.hour, day=day, month=month, year=year)
 
 
-def download_stock_names(url: str):
+def download_stock_names():
     return ["AFX.DE", "AIXA.DE", "AT1.DE", "BC8.DE", "BFSA.DE", "BOSS.DE", "CBK.DE", "DHER.DE", "DUE.DE", "ECV.DE",
             "EVD.DE", "EVK.DE", "EVT.DE", "FNTN.DE", "FPE3.DE", "FRA.DE", "G1A.DE", "G24.DE", "GXI.DE", "HFG.DE",
             "HLE.DE", "HOT.DE", "JUN3.DE", "KBX.DE", "KGX.DE", "LEG.DE", "LHA.DE", "LXS.DE", "NDA.DE", "NEM.DE",
             "O2D.DE", "PSM.DE", "PUM.DE", "QH9.DE", "RAA.DE", "RHM.DE", "RRTL.DE", "SAX.DE", "SDF.DE", "SIX2.DE",
             "SOW.DE", "STM.DE", "TEG.DE", "TKA.DE", "TLX.DE", "TMV.DE", "UTDI.DE", "VBK.DE", "WAF.DE", "WCH.DE"]
-    '''stock_names = []
-    response = requests.get(url)
-    if response.ok:
-        content = response.text.split("\n")[1:]
-        for line in content:
-            stock_names.append(line.split(",")[0])
-        return stock_names
-    else:
-        raise ConnectionError("Cannot get ticker file")'''
 
 
 def time_stamp_to_string(time_stamp: Union[pd.Timestamp, numpy.datetime64]) -> str:
