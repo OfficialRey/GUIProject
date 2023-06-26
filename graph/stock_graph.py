@@ -69,10 +69,10 @@ class StockPredictionGraph:
         axis.setTicks([x_content.items()])
 
         self.graph.plot(history_x, history_y, pen=pyqtgraph.mkPen('black'))
-        for i in range(min(len(compare_x) - 1, len(COMPARE_COLORS) - 1)):
-            self.graph.plot(compare_x[i], compare_y[i], pen=pyqtgraph.mkPen(COMPARE_COLORS[i]))
         if len(prediction_y) > 0:
             self.graph.plot(prediction_x, prediction_y, pen=pyqtgraph.mkPen('red'))
+        for i in range(min(len(compare_x), len(COMPARE_COLORS))):
+            self.graph.plot(compare_x[i], compare_y[i], pen=pyqtgraph.mkPen(COMPARE_COLORS[i]))
 
     def get_widget(self):
         return self.graph

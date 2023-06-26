@@ -3,6 +3,7 @@ import hashlib
 import os.path
 import time
 from json import JSONDecodeError
+from math import isnan
 
 from logs.log import log_message
 from stock_data.stocks import Stonks
@@ -105,12 +106,11 @@ class Portfolio:
     def get_predicted_value_cents(self, stocks: Stonks):
         total_predicted_value = 0
         for stock_name in self.stocks.keys():
-            stocks.get_stock(stock_name).get_prediction(28)  # inits model (in thread)
+            stocks.get_stock(stock_name).get_prediction(2)  # inits model (in thread)
             time.sleep(0.5)
             prediction = stocks.get_stock(stock_name).get_prediction(365)
-            print(prediction)
-            total_predicted_value += prediction[-1] * self.stocks[stock_name]
-            print(total_predicted_value)
+            if not isnan(prediction[-1]):
+                total_predicted_value += prediction[-1] * self.stocks[stock_name] * 100
         return total_predicted_value
 
 

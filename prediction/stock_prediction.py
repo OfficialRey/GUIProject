@@ -70,7 +70,7 @@ class StockPrediction:
             y = self.y
 
         if self.model is not None:
-            # Only short training time to deny patterns and to allow creativity and freedom to the network
+            # Only short training time to deny patterns and allow creativity and freedom for the network
             self.model.fit(x, y, epochs=10, verbose=verbose)
 
     def _cache_results(self, results: List[float]):

@@ -9,7 +9,7 @@ from PyQt5 import uic, QtWidgets, QtGui, QtCore
 from worker.table import StockTableItemWorker
 from enum import Enum
 from re import findall
-import time
+from math import isnan
 
 
 class StockTableColumn(Enum):
@@ -114,6 +114,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ]
 
     def set_detail_graph(self, stock):
+        # TODO: get list of compare graphs
         compare_graphs = self.get_selected_compare_stocks()
 
         stock_graph = self.findChild(QtWidgets.QWidget, "historyGraphContainer")
@@ -133,9 +134,9 @@ class MainWindow(QtWidgets.QMainWindow):
         compare_x = []
         compare_y = []
         for stock_name in compare_graphs:
-            stock = self.stocks.get_stock(stock_name)
-            compare_x.append(stock.get_time_stamps(period))
-            compare_y.append(stock.get_prices(period))
+            compare_stock = self.stocks.get_stock(stock_name)
+            compare_x.append(compare_stock.get_time_stamps(period))
+            compare_y.append(compare_stock.get_prices(period))
 
         graph = StockPredictionGraph(stock.get_time_stamps(period), stock.get_prices(period),
                                      stock.get_prediction(predict_period), compare_x, compare_y)
@@ -144,8 +145,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_portfolio(self):
         total_value = str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)) + "€"
         self.findChild(QtWidgets.QLabel, "totalValue").setText(total_value)
-        predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
-        self.findChild(QtWidgets.QLabel, "predictedValue").setText(predicted_value)
+        total_predicted_value = str(round(self.current_user.get_portfolio().get_predicted_value(self.stocks), 2)) + "€"
+        self.findChild(QtWidgets.QLabel, "predictedValue").setText(total_predicted_value)
 
         portfolio_stocks = self.current_user.get_portfolio().get_stocks()
 
@@ -154,23 +155,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         row = 0
         for stock_name in portfolio_stocks.keys():
-            table.insertRow(row)
-
             stonk = self.stocks.get_stock(stock_name)
             current_value = stonk.get_ask_price()
             predicted_value = stonk.get_prediction(365)[-1]
+            if isnan(predicted_value):
+                log_message("prediction error: nan")
+                continue
+            log_message(f"predicted {stock_name} as {predicted_value} in 12 months")
             profit = round(predicted_value / current_value * 100, 2)
             if profit < 100:
                 profit = str((100 - profit) * -1)
             else:
                 profit = "+" + str(profit - 100)
 
-            self.set_table_cell_data(row, 1, stock_name, table)
-            self.set_table_cell_data(row, 2, stonk.get_long_name(), table)
-            self.set_table_cell_data(row, 3, self.current_user.get_portfolio().get_holding(stock_name), table)
-            self.set_table_cell_data(row, 4, predicted_value, table)
+            table.insertRow(row)
+            self.set_table_cell_data(row, 1, 1, table, editable=True)
+            self.set_table_cell_data(row, 2, stock_name, table)
+            self.set_table_cell_data(row, 3, stonk.get_long_name(), table)
+            self.set_table_cell_data(row, 4, self.current_user.get_portfolio().get_holding(stock_name), table)
             self.set_table_cell_data(row, 5, current_value, table)
-            self.set_table_cell_data(row, 6, profit, table)
+            self.set_table_cell_data(row, 6, str(round(predicted_value, 2)), table)
+            self.set_table_cell_data(row, 7, profit, table)
 
             sell_button = QtWidgets.QPushButton("Sell")
             sell_button.clicked.connect(self.sell_stock)
@@ -246,7 +251,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.on_search_changed()
 
-    def set_table_cell_data(self, row, col, value, widget: QtWidgets.QTableWidget=None):
+    def set_table_cell_data(self, row, col, value, widget: QtWidgets.QTableWidget=None, editable=False):
         if not widget:
             widget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
         item = widget.item(row, col)
@@ -254,6 +259,8 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QTableWidgetItem()
             widget.setItem(row, col, item)
         item.setData(QtCore.Qt.ItemDataRole.DisplayRole, value)
+        if not editable:
+            item.setFlags(QtCore.Qt.ItemIsEnabled)
 
     def get_table_cell_data(self, row, col):
         stock_table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "stockDetailTable")
@@ -278,9 +285,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         table: QtWidgets.QTableWidget = self.findChild(QtWidgets.QTableWidget, "portfolioDetailsTable")
         row = table.currentRow()
-        stock_name = table.item(row, 1).data(QtCore.Qt.ItemDataRole.DisplayRole)
+        stock_name = table.item(row, 2).data(QtCore.Qt.ItemDataRole.DisplayRole)
+        sell_amount = table.item(row, 1).data(QtCore.Qt.ItemDataRole.DisplayRole)
         
-        self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), 1)
+        self.current_user.get_portfolio().sell_stock(stock_name, self.stocks.get_stock(stock_name).get_ask_price(), sell_amount)
         self.update_portfolio()
         self.update_user_tab()
         self.current_user.save_user()
@@ -466,11 +474,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_tab_state(TabNames.USER.value, True)
             self.set_tab_state(TabNames.PORTFOLIO.value, True)
 
-            user_balance = self.current_user.get_balance_euros()
+            user_balance = round(self.current_user.get_balance_euros(), 2)
 
             welcome_label.setText("Hi, {}".format(self.current_user.get_user_name()))
             balance_value.setText(str(user_balance))
-            portfolio_value.setText(str(self.current_user.get_portfolio().get_current_value(self.stocks)))
+            portfolio_value.setText(str(round(self.current_user.get_portfolio().get_current_value(self.stocks), 2)))
 
             balance_value.show()
             balance_label.show()
