@@ -8,14 +8,14 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 from prediction.data import get_training_data
-from util.util import post_process_results
+from util.util import fix_results
 
 
 class StockPrediction:
     model: Sequential = None
 
     def __init__(self, stocks: Union[object, List], days_input_period: int = 28, scale_values: bool = True,
-                 threading: bool = True, verbose: int = 0):
+                 threading: bool = False, verbose: int = 0):
         if not isinstance(stocks, list):
             stocks = [stocks]
         self.period = days_input_period
@@ -79,32 +79,33 @@ class StockPrediction:
         target_len = len(results) - len(self.cache)
         self.cache.extend(results[-target_len:])
 
-    def predict_future_stock_prices(self, period: int = 28):
+    def predict_future_stock_prices(self, period: int = 28) -> List[float]:
         if len(self.cache) >= period:
             return self.cache[:period]
 
-        if self.model is not None:
-            results = []
-            current_period = self.x[-1]  # Get last period
+        if self.model is None:
+            return []
 
-            for i in range(period):
-                # Use own prediction for next period
-                result = self._predict(current_period)
-                results.append(result)
-                current_period.pop(0)
-                current_period.append(result)
-            results = [element * self.scaling_factor for element in results]
-            results = post_process_results(results)
+        results = []
+        current_period = self.x[-1]  # Get last period
 
-            # Replace results by cache content
-            i = 0
-            while i < len(results) and i < len(self.cache):
-                results[i] = self.cache[i]
-                i += 1
+        for i in range(period):
+            # Use own prediction for next period
+            result = self._predict(current_period)
+            results.append(result)
+            current_period.pop(0)
+            current_period.append(result)
+        results = [element * self.scaling_factor for element in results]
+        results = fix_results(results)
 
-            self._cache_results(results)
-            return results
-        return []
+        # Replace results by cache content
+        i = 0
+        while i < len(results) and i < len(self.cache):
+            results[i] = self.cache[i]
+            i += 1
+
+        self._cache_results(results)
+        return results
 
     def _predict(self, x: List[float]):
         if self.model is not None:

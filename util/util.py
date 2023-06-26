@@ -1,9 +1,9 @@
-import math
 from typing import List, Union
 
 import numpy
 import pandas as pd
 import yfinance
+from math import isnan, nan
 
 MONTHS_IN_YEAR = 12
 
@@ -88,7 +88,7 @@ def fill_data(data: pd.DataFrame, stock_name: str):
 
     stock_data = []
     relevant_data = data[(TARGET_INDEX, stock_name)]
-    last_value = math.nan
+    last_value = relevant_data[0]
     for time_stamp in time_stamps:
         if time_stamp.to_numpy() in relevant_data.index.values:
             last_value = relevant_data.loc[time_stamp]
@@ -126,10 +126,10 @@ def get_value(key: str, info: dict):
         return 0
 
 
-def post_process_results(results: List[float]):
+def fix_results(results: List[float]):
     # Overwrite negative entries with previous non-negative values
     for i in range(1, len(results)):
-        if results[i] < 0:
+        if results[i] <= 0 or isnan(results[i]):
             results[i] = results[i - 1]
     return results
 

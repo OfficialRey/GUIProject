@@ -2,6 +2,8 @@ import math
 import random
 from typing import List, Tuple
 
+from util.util import fix_results
+
 
 def remove_nan(ticker_data: List[float]) -> List[float]:
     new_data = []
@@ -23,6 +25,7 @@ def get_training_data(ticker_data: List[float], input_period: int, scale_values:
         noise = (random.random() * 0.4 + 0.8)  # We add a tiny bit of noise to counter patterns in the predictions
         ticker_data = [((element * noise) / scaling_factor) for element in
                        ticker_data]  # Normalize values for more efficient and accurate training
+        ticker_data = fix_results(ticker_data)
 
     for i in range(len(ticker_data)):
         if i < input_period:

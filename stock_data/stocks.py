@@ -170,10 +170,9 @@ class Stock:
             return self.time_stamps
         return self.time_stamps[-period:]
 
-    def get_prediction(self, period: int):
+    def get_prediction(self, period: int) -> List[float]:
         if self.prediction_algorithm is None:
-            self.prediction_algorithm = StockPrediction(self, threading=True)
-            return []
+            self.prediction_algorithm = StockPrediction(self, threading=False)
         return self.prediction_algorithm.predict_future_stock_prices(period)
 
 

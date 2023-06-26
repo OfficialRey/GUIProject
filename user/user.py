@@ -100,14 +100,12 @@ class Portfolio:
                   self.stocks.keys()]
         return sum(values)
     
-    def get_predicted_value(self, stocks: Stonks):
+    def get_predicted_value(self, stocks: Stonks) -> float:
         return self.get_predicted_value_cents(stocks) / 100
 
-    def get_predicted_value_cents(self, stocks: Stonks):
+    def get_predicted_value_cents(self, stocks: Stonks) -> float:
         total_predicted_value = 0
         for stock_name in self.stocks.keys():
-            stocks.get_stock(stock_name).get_prediction(2)  # inits model (in thread)
-            time.sleep(0.5)
             prediction = stocks.get_stock(stock_name).get_prediction(365)
             if not isnan(prediction[-1]):
                 total_predicted_value += prediction[-1] * self.stocks[stock_name] * 100
